@@ -1,6 +1,6 @@
-# API Security & Auth Protocol Reference (AI Era)
+# API Security & Auth Protocol Reference
 
-Two interactive, single-file HTML reference guides covering API security and authentication/authorization protocols, with a focus on how these controls apply to AI systems, LLM endpoints, and agentic pipelines.
+Two interactive, single-file HTML reference guides covering HTTP API security and authentication/authorization protocols, with dedicated guidance for LLM endpoints, agents, and MCP servers.
 
 **Live demos:** [API Security in the AI Era](https://tgandhle.github.io/api-auth-security-reference/api-security-ai-era.html) · [Auth Protocols Guide](https://tgandhle.github.io/api-auth-security-reference/auth-protocols-guide.html) 
 
@@ -8,8 +8,9 @@ Two interactive, single-file HTML reference guides covering API security and aut
 
 | File | What it covers |
 |------|----------------|
-| `auth-protocols-guide.html` | AuthN vs AuthZ across 8 protocols: OAuth 2.0 + PKCE, OpenID Connect, SAML 2.0, Client Credentials, mTLS, DPoP, FAPI 2.0, and the deprecated Implicit flow. Each with flow diagrams, a fact breakdown, and a verdict. Includes a protocol comparison matrix. |
-| `api-security-ai-era.html` | 9 control domains and 34 controls: auth mechanisms, JWT attack surface, gateway enforcement, rate limiting, webhooks, CORS, AI-specific threats, and versioning. Includes an interactive 20-point security review checklist. |
+| `auth-protocols-guide.html` | AuthN vs AuthZ across OAuth 2.0 + PKCE, OpenID Connect, SAML 2.0, Client Credentials, mTLS, DPoP, FAPI 2.0, MCP authorization, and the no-longer-recommended Implicit flow. Each card states its scope and standards basis. |
+| `api-security-ai-era.html` | Explicit coverage of all ten OWASP API Security Top 10 risks, token lifecycle and key management, API boundaries, gateway controls, webhooks, CORS, AI and agent risks, and versioning. Includes an interactive security review checklist. |
+| `standards-and-sources.md` | Versioned primary sources, coverage matrices, scope, and the rules used to distinguish standards requirements from project recommendations. |
 
 Both files are static single-page HTML references. No build step, framework, or runtime application dependency is required. The pages load Google Fonts from Google's CDN, with system-font fallbacks if that fails; remove the `<link>` in each file's `<head>` if you need strict offline behavior.
 
@@ -17,7 +18,13 @@ Both files are static single-page HTML references. No build step, framework, or 
 
 Most auth and API security references are either dense RFC prose or vendor marketing. I wanted a reference that is opinionated, gives a clear verdict on when to use each protocol, and treats AI-specific concerns (prompt injection via API, inference cost attacks, token exfiltration through LLM responses, sensitive data in model context) as first-class rather than an afterthought.
 
-The content maps to recognized standards: relevant RFCs (6749, 7636, 8705, 9449, 9700), the OWASP API Security Top 10, and FAPI 2.0. Where the guidance is my recommendation rather than a standard, it says so.
+The content maps to versioned primary sources, including the OAuth and JWT RFCs, the OWASP API Security Top 10 (2023), the OWASP Top 10 for LLM Applications (2025), the OWASP Top 10 for Agentic Applications (2026), FAPI 2.0, and the MCP authorization specification (2025-11-25). Requirements are attributed to their source; project recommendations are labelled as recommendations.
+
+## Scope
+
+This is a comprehensive baseline for HTTP and JSON APIs that use OAuth, JWTs, service credentials, webhooks, LLMs, agents, or MCP. It does not claim complete treatment of GraphQL, gRPC, WebSocket, mobile platform, browser application, or cloud-provider configuration security. Those systems still need protocol-specific review.
+
+See [`standards-and-sources.md`](standards-and-sources.md) for the coverage definition and source versions. Each control should answer five questions: what can fail, where enforcement belongs, what is required, how to test it, and which primary source supports it.
 
 ## What this demonstrates
 
@@ -37,11 +44,9 @@ open auth-protocols-guide.html
 python3 -m http.server 8000
 ```
 
-To host the live demo, enable GitHub Pages in repo settings (Settings → Pages → deploy from the main branch root), then link the URL at the top of this README.
-
 ## Notes
 
-This is reference material for design reviews and learning. It reflects best practices as I understand them at time of writing; verify protocol details against current RFCs and vendor documentation before relying on them in production. The gateway product comparison in particular is a point-in-time snapshot, as noted in the file.
+This is reference material for design reviews and learning, not a substitute for a system-specific threat model. Standards and platform capabilities change. The source register records the version and review date used by these guides. Product selection should be based on deployment-specific acceptance tests, not a generic feature table.
 
 ## License
 

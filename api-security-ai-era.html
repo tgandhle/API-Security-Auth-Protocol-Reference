@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A versioned HTTP API security reference covering OWASP API risks, OAuth and JWT controls, MCP, and AI agent boundaries.">
 <title>API Security — AI Era</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Barlow:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&amp;family=Barlow:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f5f3ee;
@@ -591,6 +592,27 @@
     gap: 8px;
   }
 
+  a { color: var(--blue); }
+  a:hover { text-decoration-thickness: 2px; }
+
+  .control-header:focus-visible,
+  .checklist-item:focus-visible,
+  .nav-tab:focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: -3px;
+  }
+
+  .reference-footer {
+    padding: 24px 48px 36px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.7;
+  }
+
+  .reference-footer strong { color: var(--text); }
+
   /* RESPONSIVE */
   @media (max-width: 800px) {
     header { padding: 32px 24px 28px; }
@@ -601,6 +623,14 @@
     .body-panel:first-child { border-right: none; border-bottom: 1px solid var(--border); }
     .two-col { grid-template-columns: 1fr; }
     .header-stats { gap: 24px; flex-wrap: wrap; }
+    .reference-footer { padding: 22px 24px 32px; }
+  }
+
+  @media print {
+    .nav-tabs { display: none; }
+    .section { display: block !important; padding: 20px; }
+    .control-body { display: block !important; }
+    .control-card { break-inside: avoid; }
   }
 </style>
 </head>
@@ -611,14 +641,14 @@
   <div class="header-eyebrow">// Reference Guide · API Security · AI Era</div>
   <h1>API Security<br><span class="accent">in the AI Era</span></h1>
   <p class="header-desc">
-    Authentication mechanisms, gateway enforcement, JWT attack surface, rate limiting, webhook verification, CORS, and AI-specific API threats.<br>
-    Operational controls for architects and engineers.
+    Authentication, resource authorization, token lifecycle, API boundaries, gateway enforcement, webhooks, CORS, and AI-agent threats.<br>
+    A versioned HTTP API baseline with tests and primary sources.
   </p>
   <div class="header-stats">
-    <div class="stat"><div class="stat-num">9</div><div class="stat-label">Control Domains</div></div>
-    <div class="stat"><div class="stat-num">34</div><div class="stat-label">Controls</div></div>
-    <div class="stat"><div class="stat-num">6</div><div class="stat-label">AI-Specific Threats</div></div>
-    <div class="stat"><div class="stat-num">OWASP API Top 10</div><div class="stat-label">Coverage Baseline</div></div>
+    <div class="stat"><div class="stat-num">API1–API10</div><div class="stat-label">OWASP API 2023 Mapped</div></div>
+    <div class="stat"><div class="stat-num">LLM 2025</div><div class="stat-label">AI Baseline</div></div>
+    <div class="stat"><div class="stat-num">Agentic 2026</div><div class="stat-label">Agent Baseline</div></div>
+    <div class="stat"><div class="stat-num">2026-08-16</div><div class="stat-label">Last Reviewed</div></div>
   </div>
 </header>
 
@@ -627,12 +657,12 @@
   <div class="threat-card">
     <div class="threat-level level-critical">Critical</div>
     <h3>Broken Auth</h3>
-    <p>API keys in URLs, no rotation, implicit OAuth. A leading cause of API breaches (OWASP API2:2023).</p>
+    <p>Credential transport, rotation, token validation, and obsolete OAuth flows. Covered by OWASP API2:2023.</p>
   </div>
   <div class="threat-card">
     <div class="threat-level level-high">High</div>
     <h3>JWT Attacks</h3>
-    <p>alg:none bypass, weak signing keys, missing claim validation. Trivial to exploit.</p>
+    <p>Algorithm confusion, weak keys, cross-JWT confusion, and profile-specific claim failures.</p>
   </div>
   <div class="threat-card">
     <div class="threat-level level-high">High</div>
@@ -642,15 +672,17 @@
   <div class="threat-card">
     <div class="threat-level level-control">Control</div>
     <h3>Gateway Enforcement</h3>
-    <p>Most controls fail because they live in app code, not the gateway. Fix the enforcement layer first.</p>
+    <p>Centralize shared controls at the gateway while keeping object and business authorization in the application.</p>
   </div>
 </div>
 
 <!-- NAV TABS -->
-<div class="nav-tabs">
+<div class="nav-tabs" role="tablist" aria-label="API security topics">
   <button class="nav-tab active" onclick="switchTab('authmech', this)">Auth Mechanisms</button>
+  <button class="nav-tab" onclick="switchTab('authorization', this)">Authorization</button>
   <button class="nav-tab" onclick="switchTab('jwt', this)">JWT Security</button>
   <button class="nav-tab" onclick="switchTab('gateway', this)">Gateway Controls</button>
+  <button class="nav-tab" onclick="switchTab('boundaries', this)">API Boundaries</button>
   <button class="nav-tab" onclick="switchTab('ratelimit', this)">Rate Limiting</button>
   <button class="nav-tab" onclick="switchTab('webhook', this)">Webhooks</button>
   <button class="nav-tab" onclick="switchTab('cors', this)">CORS</button>
@@ -671,13 +703,13 @@
   <div class="controls-grid">
 
     <!-- API Keys -->
-    <div class="control-card critical" onclick="toggleControl(this)">
+    <div class="control-card critical" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">01</div>
           <div class="control-title-group">
             <h3>API Keys</h3>
-            <div class="control-subtitle">Static Shared Secrets · Most Common, Most Abused</div>
+            <div class="control-subtitle">Static Bearer Credentials · Simple but High Impact When Exposed</div>
           </div>
         </div>
         <div class="control-header-right">
@@ -708,14 +740,14 @@
                 <div class="step-icon" style="color:var(--red)">✗</div>
                 <div class="step-content">
                   <div class="step-title">Key in source code</div>
-                  <div class="step-desc">Committed to repos, leaked in build artifacts. GitHub searches for API keys return thousands of live credentials daily.</div>
+                  <div class="step-desc">Committed credentials can propagate into repository history, forks, build artifacts, caches, and logs even after the visible source line is removed.</div>
                 </div>
               </div>
               <div class="attack-step">
                 <div class="step-icon" style="color:var(--orange)">!</div>
                 <div class="step-content">
                   <div class="step-title">No rotation policy</div>
-                  <div class="step-desc">A key from 3 years ago is still valid. You have no idea who has it or if it's been shared.</div>
+                  <div class="step-desc">An indefinitely valid key can outlive its owner, workload, or intended purpose. Without ownership and usage telemetry, exposure may go unnoticed.</div>
                 </div>
               </div>
             </div>
@@ -725,8 +757,6 @@ GET /api/data?<span class="bad">api_key=sk_live_abc123</span>
 
 <span class="comment"># GOOD — key in header</span>
 GET /api/data
-<span class="key">Authorization</span>: <span class="val">ApiKey sk_live_abc123</span>
-<span class="comment"># or</span>
 <span class="key">X-API-Key</span>: <span class="val">sk_live_abc123</span>
             </div>
           </div>
@@ -735,9 +765,9 @@ GET /api/data
             <div class="fact-group">
               <h4>Mandatory</h4>
               <div class="fact-items">
-                <div class="fact-item good"><span class="fact-icon">✓</span><span>Always in Authorization header or X-API-Key header. Never in URL query params.</span></div>
-                <div class="fact-item good"><span class="fact-icon">✓</span><span>Enforce a rotation policy. Recommended baseline: 90 days for production keys, 30 days for high-value integrations. Adjust to your risk tolerance.</span></div>
-                <div class="fact-item good"><span class="fact-icon">✓</span><span>Store in secrets vault only. CyberArk, AWS Secrets Manager, HashiCorp Vault. Never env vars in plaintext config.</span></div>
+                <div class="fact-item good"><span class="fact-icon">✓</span><span>Use a documented header scheme such as a dedicated API-key header. Do not place credentials in URL query parameters.</span></div>
+                <div class="fact-item good"><span class="fact-icon">✓</span><span>Define issuance, rotation, overlap, revocation, ownership, and emergency-replacement procedures from the threat model. Do not rely on an arbitrary universal rotation interval.</span></div>
+                <div class="fact-item good"><span class="fact-icon">✓</span><span>Use an approved runtime secret mechanism. Do not commit keys, bake them into images, or store them in plaintext configuration.</span></div>
                 <div class="fact-item good"><span class="fact-icon">✓</span><span>Scope keys to minimum required permissions. A read-only key should not have write access.</span></div>
                 <div class="fact-item good"><span class="fact-icon">✓</span><span>Log and alert on key usage anomalies. Unusual volume, unusual source IPs, off-hours usage.</span></div>
               </div>
@@ -745,31 +775,31 @@ GET /api/data
             <div class="fact-group">
               <h4>AI Context</h4>
               <div class="fact-items">
-                <div class="fact-item warn"><span class="fact-icon">!</span><span>LLM integrations often use API keys to call model endpoints (OpenAI, Anthropic, Azure OpenAI). These keys have high blast radius — treat them as secrets with elevated sensitivity.</span></div>
-                <div class="fact-item bad"><span class="fact-icon">✗</span><span>Never pass API keys in prompts or context. LLMs log input. Keys in prompts = keys in logs.</span></div>
+                <div class="fact-item warn"><span class="fact-icon">!</span><span>LLM integrations commonly use API keys to call model endpoints. Scope and monitor them carefully because they may authorize costly inference, access to stored data, or management operations.</span></div>
+                <div class="fact-item bad"><span class="fact-icon">✗</span><span>Do not place API keys in prompts or model context. Context can propagate into application, proxy, tracing, evaluation, or provider systems.</span></div>
               </div>
             </div>
           </div>
         </div>
         <div class="verdict-box critical">
           <div class="verdict-label">Risk Verdict</div>
-          <p>API keys are the weakest auth mechanism and the most widely deployed. The risk is not the key itself — it's the operational controls around it. Without rotation, scoping, vault storage, and header-only transport, API keys are effectively public credentials waiting to be found.</p>
+          <p>Static bearer API keys provide limited identity and lifecycle semantics compared with modern token or signed-request designs. Use them only with explicit transport, storage, scope, rotation, monitoring, and revocation controls.</p>
         </div>
       </div>
     </div>
 
     <!-- HMAC -->
-    <div class="control-card high" onclick="toggleControl(this)">
+    <div class="control-card high" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">02</div>
           <div class="control-title-group">
             <h3>HMAC Request Signing</h3>
-            <div class="control-subtitle">Hash-Based Message Authentication · Strong M2M Auth</div>
+            <div class="control-subtitle">Hash-Based Message Authentication · Scheme-Specific M2M Control</div>
           </div>
         </div>
         <div class="control-header-right">
-          <span class="badge badge-good">Recommended</span>
+          <span class="badge badge-good">Design Option</span>
           <span class="chevron">▼</span>
         </div>
       </div>
@@ -789,14 +819,14 @@ GET /api/data
                 <div class="step-icon" style="color:var(--muted)">02</div>
                 <div class="step-content">
                   <div class="step-title">Sign with shared secret</div>
-                  <div class="step-desc">HMAC-SHA256(canonical_string, secret_key). Produces a signature unique to this exact request at this exact time.</div>
+                  <div class="step-desc">HMAC-SHA256(canonical_string, secret_key). The result authenticates the exact canonical bytes to a party that also knows the shared secret.</div>
                 </div>
               </div>
               <div class="attack-step">
                 <div class="step-icon" style="color:var(--muted)">03</div>
                 <div class="step-content">
                   <div class="step-title">Server verifies</div>
-                  <div class="step-desc">Recomputes the same HMAC. If it matches, the request is authentic and untampered. Timestamp check prevents replay.</div>
+                  <div class="step-desc">Recomputes the HMAC and compares it in constant time. A timestamp bounds freshness; separate duplicate detection is needed when replays inside that window matter.</div>
                 </div>
               </div>
             </div>
@@ -814,46 +844,46 @@ x-content-sha256:abc...\n
             <div class="fact-group">
               <h4>Why It's Stronger Than API Keys</h4>
               <div class="fact-items">
-                <div class="fact-item good"><span class="fact-icon">✓</span><span>The secret never travels on the wire. Only the signature does. Intercepting the request gives you nothing reusable.</span></div>
-                <div class="fact-item good"><span class="fact-icon">✓</span><span>Timestamp in the signature prevents replay attacks. Server rejects requests older than N seconds (typically 5 minutes).</span></div>
+                <div class="fact-item good"><span class="fact-icon">✓</span><span>The shared secret is not sent with the request. The signature proves integrity and possession of that secret, subject to the canonicalization and key-management design.</span></div>
+                <div class="fact-item warn"><span class="fact-icon">!</span><span>A timestamp limits the replay window but does not prevent replay inside it. Use a unique request identifier, nonce, sequence, or idempotency key with server-side duplicate detection when replay matters.</span></div>
                 <div class="fact-item good"><span class="fact-icon">✓</span><span>Body is included in the signature. Any tampering with the payload invalidates the signature.</span></div>
               </div>
             </div>
             <div class="fact-group">
               <h4>Where It's Used</h4>
               <div class="fact-items">
-                <div class="fact-item info"><span class="fact-icon">→</span><span>AWS Signature V4, Stripe webhook verification, Shopify, GitHub webhooks. Battle-tested pattern.</span></div>
-                <div class="fact-item info"><span class="fact-icon">→</span><span>Correct for service-to-service calls where both sides can share a secret securely via vault.</span></div>
+                <div class="fact-item info"><span class="fact-icon">→</span><span>HMAC appears in request-signing and webhook schemes, but their canonicalization, headers, encodings, and replay rules are not interchangeable.</span></div>
+                <div class="fact-item info"><span class="fact-icon">→</span><span>Useful for service-to-service calls when both parties can provision, protect, rotate, and revoke a shared secret.</span></div>
               </div>
             </div>
             <div class="fact-group">
               <h4>Limitations</h4>
               <div class="fact-items">
                 <div class="fact-item warn"><span class="fact-icon">!</span><span>Both sides must store the shared secret securely. If the receiver is compromised, the secret is compromised.</span></div>
-                <div class="fact-item warn"><span class="fact-icon">!</span><span>Does not provide non-repudiation — either party could have produced the signature. Use asymmetric signing (RS256/ES256) if you need proof of origin.</span></div>
+                <div class="fact-item warn"><span class="fact-icon">!</span><span>Either holder of the shared secret can produce a valid signature. If the receiver must be unable to forge caller signatures, use a reviewed asymmetric request-signature design instead.</span></div>
               </div>
             </div>
           </div>
         </div>
         <div class="verdict-box info">
           <div class="verdict-label">Use Case Verdict</div>
-          <p>HMAC signing is the right choice for M2M API calls where you need request integrity and replay protection without full PKI. Used correctly with vault-stored secrets and short timestamp windows, it's substantially stronger than bare API keys.</p>
+          <p>HMAC request signing is a useful M2M option when both parties can protect a shared secret and agree on canonicalization. Add timestamp validation and duplicate detection for replay resistance; a timestamp alone is not sufficient.</p>
         </div>
       </div>
     </div>
 
     <!-- Service Account + mTLS -->
-    <div class="control-card medium" onclick="toggleControl(this)">
+    <div class="control-card medium" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">03</div>
           <div class="control-title-group">
             <h3>Service Accounts + mTLS</h3>
-            <div class="control-subtitle">Certificate-Based Identity · Highest Assurance M2M</div>
+            <div class="control-subtitle">Certificate-Based Identity · High-Assurance M2M Option</div>
           </div>
         </div>
         <div class="control-header-right">
-          <span class="badge badge-good">Best Practice</span>
+          <span class="badge badge-good">Threat-Model Option</span>
           <span class="badge badge-ai">AI/Agent</span>
           <span class="chevron">▼</span>
         </div>
@@ -867,7 +897,7 @@ x-content-sha256:abc...\n
                 <div class="step-icon" style="color:var(--muted)">→</div>
                 <div class="step-content">
                   <div class="step-title">Each service has a certificate</div>
-                  <div class="step-desc">Issued by internal CA. Contains service identity (SPIFFE ID or CN). Short-lived — 24h to 7 days max. Auto-rotated.</div>
+                  <div class="step-desc">Issued by a trusted CA and mapped to a workload identity, commonly through a URI or DNS subject alternative name. Lifetime and automated rotation are set by operational risk and recovery requirements.</div>
                 </div>
               </div>
               <div class="attack-step">
@@ -880,8 +910,8 @@ x-content-sha256:abc...\n
               <div class="attack-step">
                 <div class="step-icon" style="color:var(--muted)">→</div>
                 <div class="step-content">
-                  <div class="step-title">Token binding (optional + recommended)</div>
-                  <div class="step-desc">OAuth token bound to cert thumbprint. Stolen token can't be used without the cert that matches.</div>
+                  <div class="step-title">Certificate-bound token (when selected)</div>
+                  <div class="step-desc">An RFC 8705 access token bound to the client certificate cannot be used without proving possession of the matching private key, if the resource server enforces the binding.</div>
                 </div>
               </div>
             </div>
@@ -891,26 +921,163 @@ x-content-sha256:abc...\n
             <div class="fact-group">
               <h4>AI Agent Context</h4>
               <div class="fact-items">
-                <div class="fact-item good"><span class="fact-icon">✓</span><span>Each agent or MCP server should have its own service identity. Don't share certs across services.</span></div>
-                <div class="fact-item good"><span class="fact-icon">✓</span><span>SPIFFE/SPIRE provides workload identity for containerized agents without manual cert management.</span></div>
+                <div class="fact-item good"><span class="fact-icon">✓</span><span>Assign workload identities at the smallest operational boundary that needs independent policy, rotation, revocation, and audit. Avoid sharing one certificate across unrelated services.</span></div>
+                <div class="fact-item info"><span class="fact-icon">→</span><span>SPIFFE-compatible systems are one option for issuing and rotating workload identities. Their trust domain, attestation, and authorization mapping still require design review.</span></div>
                 <div class="fact-item warn"><span class="fact-icon">!</span><span>Operationally expensive. Requires CA, cert issuance pipeline, rotation automation, and revocation (CRL or OCSP).</span></div>
               </div>
             </div>
             <div class="fact-group">
               <h4>When to Use</h4>
               <div class="fact-items">
-                <div class="fact-item info"><span class="fact-icon">→</span><span>High-value agent pipelines, regulated data access (PHI, PCI), or anywhere bearer token theft is a credible threat.</span></div>
+                <div class="fact-item info"><span class="fact-icon">→</span><span>Consider it where mutual workload authentication or bearer-token replay is a material threat and the environment can operate certificate issuance, rotation, revocation, and key protection reliably.</span></div>
               </div>
             </div>
           </div>
         </div>
         <div class="verdict-box info">
           <div class="verdict-label">Use Case Verdict</div>
-          <p>mTLS + service accounts is the correct answer for agentic AI pipelines that handle sensitive data or have high blast radius. The operational cost is real — invest in SPIFFE/SPIRE or a service mesh to automate cert lifecycle rather than managing certs manually.</p>
+          <p>mTLS plus workload identity is a strong option when the threat model requires mutual authentication or certificate-bound tokens and the deployment can operate PKI safely. Automated issuance, rotation, revocation, and workload identity are part of the control.</p>
         </div>
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB: AUTHORIZATION -->
+<!-- ============================================================ -->
+<div id="tab-authorization" class="section">
+  <div class="section-header">
+    <h2>Resource and Business Authorization</h2>
+    <p>Authentication establishes who or what is calling. Every handler must still decide whether that principal may perform this action on this resource, property, tenant, and business workflow.</p>
+  </div>
+
+  <div class="controls-grid">
+    <div class="control-card critical" onclick="toggleControl(this, event)">
+      <div class="control-header">
+        <div class="control-header-left">
+          <div class="control-num">01</div>
+          <div class="control-title-group">
+            <h3>Object-Level Authorization</h3>
+            <div class="control-subtitle">OWASP API1:2023 · BOLA / IDOR · Tenant Isolation</div>
+          </div>
+        </div>
+        <div class="control-header-right">
+          <span class="badge badge-critical">Critical</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="control-body">
+        <div class="control-body-inner">
+          <div class="body-panel">
+            <div class="panel-label">Failure and Negative Test</div>
+            <div class="code-block">
+<span class="comment"># Caller has scope orders:read, but owns order A only</span>
+GET /orders/<span class="bad">B</span>
+Authorization: Bearer &lt;valid-token&gt;
+
+<span class="bad">FAIL:</span> handler loads B by identifier and returns it
+<span class="good">PASS:</span> query or policy constrains B to caller + tenant
+            </div>
+          </div>
+          <div class="body-panel">
+            <div class="panel-label">Required Controls</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Authorize every object lookup using the authenticated subject, tenant, requested action, and resource attributes. A valid token and broad scope are not sufficient.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Apply the ownership or tenant constraint in the data query or centralized policy decision, not only in a user-interface filter.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Test horizontal access, cross-tenant access, guessed identifiers, nested resources, bulk operations, exports, and indirect references.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>Opaque or random identifiers reduce guessing but do not replace authorization.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict-box critical">
+          <div class="verdict-label">Authorization Boundary</div>
+          <p>Gateway scopes can reject obviously disallowed operations, but object ownership and tenant isolation normally require application or policy-layer context. Source: <a href="https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/">OWASP API1:2023</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-card critical" onclick="toggleControl(this, event)">
+      <div class="control-header">
+        <div class="control-header-left">
+          <div class="control-num">02</div>
+          <div class="control-title-group">
+            <h3>Property and Function Authorization</h3>
+            <div class="control-subtitle">OWASP API3 + API5 · Mass Assignment · Privileged Functions</div>
+          </div>
+        </div>
+        <div class="control-header-right">
+          <span class="badge badge-critical">Critical</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="control-body">
+        <div class="control-body-inner">
+          <div class="body-panel">
+            <div class="panel-label">Attack Examples</div>
+            <div class="code-block">
+PATCH /users/me
+{ "display_name": "A", <span class="bad">"role": "admin"</span> }
+
+GET <span class="bad">/admin/export</span>
+Authorization: Bearer &lt;ordinary-user-token&gt;
+            </div>
+          </div>
+          <div class="body-panel">
+            <div class="panel-label">Required Controls</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Use explicit input and output schemas. Allowlist writable and readable properties for the caller and operation; do not bind request bodies directly to privileged domain objects.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Authorize the HTTP method and business function independently from route visibility. Default deny newly added administrative endpoints.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Test ordinary users against administrative routes, alternate methods, hidden fields, bulk updates, and response fields containing confidential properties.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict-box critical">
+          <div class="verdict-label">Authorization Boundary</div>
+          <p>Schema validation determines shape; authorization determines which principal may read or write each property and invoke each function. Sources: <a href="https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/">API3</a> and <a href="https://owasp.org/API-Security/editions/2023/en/0xa5-broken-function-level-authorization/">API5</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-card high" onclick="toggleControl(this, event)">
+      <div class="control-header">
+        <div class="control-header-left">
+          <div class="control-num">03</div>
+          <div class="control-title-group">
+            <h3>Sensitive Business Flows</h3>
+            <div class="control-subtitle">OWASP API6:2023 · Automation and Economic Abuse</div>
+          </div>
+        </div>
+        <div class="control-header-right">
+          <span class="badge badge-high">High</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="control-body">
+        <div class="control-body-inner">
+          <div class="body-panel">
+            <div class="panel-label">Flows to Identify</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item bad"><span class="fact-icon">✗</span><span>Account creation, password recovery, reservations, purchases, referral credits, voting, inventory holds, exports, and expensive AI actions can be abused with valid credentials.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>A technically authorized request can still violate business limits or automate a flow intended for bounded human use.</span></div>
+            </div>
+          </div>
+          <div class="body-panel">
+            <div class="panel-label">Controls and Verification</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Define invariants, per-principal and per-tenant quotas, state-transition rules, idempotency behavior, and step-up approval for consequential actions.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Detect distributed low-rate abuse using account, device, payment, destination, and workflow signals rather than IP address alone.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Test concurrency, retries, replay, race conditions, and automation that stays below simple request-rate thresholds.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict-box high">
+          <div class="verdict-label">Business Control</div>
+          <p>Rate limiting is only one defense. The application must enforce business invariants and state transitions. Source: <a href="https://owasp.org/API-Security/editions/2023/en/0xa6-unrestricted-access-to-sensitive-business-flows/">OWASP API6:2023</a>.</p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -920,12 +1087,12 @@ x-content-sha256:abc...\n
 <div id="tab-jwt" class="section">
   <div class="section-header">
     <h2>JWT Security</h2>
-    <p>JWTs are used in almost every modern API auth flow. They're also widely misconfigured. These are the real attacks and the specific validation rules that prevent them.</p>
+    <p>JWTs are common in API authentication and authorization, but safe validation depends on the exact token profile. These are concrete attacks and the validation rules that address them.</p>
   </div>
 
   <div class="controls-grid">
 
-    <div class="control-card critical" onclick="toggleControl(this)">
+    <div class="control-card critical" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">01</div>
@@ -977,26 +1144,26 @@ jwt.decode(token, key,
               <div class="fact-items">
                 <div class="fact-item good"><span class="fact-icon">✓</span><span>Server must enforce an explicit algorithm allowlist. Never derive the algorithm from the token header.</span></div>
                 <div class="fact-item good"><span class="fact-icon">✓</span><span>Reject tokens with alg:none unconditionally. No exceptions.</span></div>
-                <div class="fact-item good"><span class="fact-icon">✓</span><span>If using asymmetric (RS256/ES256), ensure the verification key is the public key and the signing key is the private key. They are not interchangeable.</span></div>
-                <div class="fact-item good"><span class="fact-icon">✓</span><span>Prefer ES256 (ECDSA) over RS256 for new implementations. Shorter keys, same security level, harder to misuse.</span></div>
+                <div class="fact-item good"><span class="fact-icon">✓</span><span>If using asymmetric signing, keep signing private keys separate from verification public keys and configure the expected algorithm explicitly.</span></div>
+                <div class="fact-item info"><span class="fact-icon">→</span><span>Choose an approved algorithm that your ecosystem implements safely. ES256 has smaller keys and signatures than RSA, but it is not inherently misuse-proof. FAPI 2.0 permits PS256, ES256, and EdDSA with Ed25519.</span></div>
               </div>
             </div>
           </div>
         </div>
         <div class="verdict-box critical">
           <div class="verdict-label">Critical Verdict</div>
-          <p>This class of attack has been exploited in production systems. The fix is two lines of code — an explicit algorithm allowlist and disabled alg:none. There is no excuse for a modern production system to be vulnerable to this.</p>
+          <p>Algorithm-confusion defenses require more than signature success. Configure the expected token profile and algorithm set server-side, reject unsupported algorithms including <code>none</code>, use the correct key type, and test negative cases.</p>
         </div>
       </div>
     </div>
 
-    <div class="control-card high" onclick="toggleControl(this)">
+    <div class="control-card high" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">02</div>
           <div class="control-title-group">
             <h3>Missing Claim Validation</h3>
-            <div class="control-subtitle">exp, aud, iss, sub · Authorization Bypass</div>
+            <div class="control-subtitle">Profile-specific claims · Audience and Token-Type Confusion</div>
           </div>
         </div>
         <div class="control-header-right">
@@ -1007,20 +1174,19 @@ jwt.decode(token, key,
       <div class="control-body">
         <div class="control-body-inner">
           <div class="body-panel">
-            <div class="panel-label">Claims You Must Validate</div>
+            <div class="panel-label">Define the Token Profile First</div>
             <div class="code-block">
-<span class="comment"># Every JWT validation MUST check all of these:</span>
+<span class="comment"># Generic JWT (RFC 7519): required claims are context-dependent.</span>
+<span class="comment"># The application MUST define and enforce its accepted profile.</span>
 
-<span class="key">exp</span>  → token not expired (check against current time)
-<span class="key">nbf</span>  → token not used before valid time (if present)
-<span class="key">iss</span>  → issuer matches your expected auth server
-<span class="key">aud</span>  → audience matches YOUR service identifier
-<span class="key">sub</span>  → subject is a valid, active identity
-<span class="key">jti</span>  → token ID not in revocation list (if using revocation)
+<span class="comment"># OAuth JWT access token profile (RFC 9068):</span>
+require: <span class="key">typ=at+jwt, iss, exp, aud, sub, client_id, iat, jti</span>
+validate: signature, algorithm, issuer, audience, time, token type
 
-<span class="comment"># Common mistake: validating signature but not aud</span>
-<span class="comment"># A token issued for Service A is valid for Service B</span>
-<span class="comment"># if Service B doesn't check aud. Token substitution attack.</span>
+<span class="comment"># Client credentials under RFC 9068 still has sub:</span>
+<span class="key">sub</span> → identifies the client application, not a human user
+
+<span class="comment"># Never accept an ID token where an access token is expected.</span>
             </div>
           </div>
           <div class="body-panel">
@@ -1028,9 +1194,10 @@ jwt.decode(token, key,
             <div class="fact-group">
               <div class="fact-items">
                 <div class="fact-item bad"><span class="fact-icon">✗</span><span>Signature validation alone is not enough. A token signed by a trusted IdP for a different service is still not valid for your service.</span></div>
-                <div class="fact-item bad"><span class="fact-icon">✗</span><span>Missing exp check means tokens are valid forever. One leak = permanent access.</span></div>
+                <div class="fact-item bad"><span class="fact-icon">✗</span><span>Accepting a token without enforcing the claims required by its profile can create indefinite lifetime, token-substitution, or cross-service access.</span></div>
                 <div class="fact-item good"><span class="fact-icon">✓</span><span>Validate aud against a hardcoded list of acceptable audience values for your service. Reject anything not on the list.</span></div>
-                <div class="fact-item good"><span class="fact-icon">✓</span><span>Short token lifetimes reduce exposure window. Access tokens: 15 minutes. Refresh tokens: hours to days with rotation.</span></div>
+                <div class="fact-item good"><span class="fact-icon">✓</span><span>Use an explicit token type and mutually exclusive validation rules for access tokens, ID tokens, authorization assertions, and other JWT kinds.</span></div>
+                <div class="fact-item info"><span class="fact-icon">→</span><span>Project recommendation: choose token lifetimes from the threat model and recovery design. Shorter access-token lifetimes reduce theft exposure but increase authorization-server dependency.</span></div>
                 <div class="fact-item warn"><span class="fact-icon">!</span><span>AI context: LLM services calling downstream APIs must validate the aud claim. A token issued for the LLM frontend is not valid for the backend data API.</span></div>
               </div>
             </div>
@@ -1038,12 +1205,12 @@ jwt.decode(token, key,
         </div>
         <div class="verdict-box high">
           <div class="verdict-label">High Risk Verdict</div>
-          <p>Most JWT libraries validate the signature by default. Most do NOT validate all claims by default. You have to explicitly configure aud, iss, and exp validation. Check your library's defaults — assume they are insufficient.</p>
+          <p>Library defaults vary. Configure the accepted token type, algorithms, issuer, audience, required claims, and clock-skew policy explicitly, then test rejection of a token from the wrong profile or audience.</p>
         </div>
       </div>
     </div>
 
-    <div class="control-card medium" onclick="toggleControl(this)">
+    <div class="control-card medium" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">03</div>
@@ -1071,8 +1238,8 @@ sessionStorage.setItem('token', jwt)
 <span class="good"># BETTER: HttpOnly cookie — XSS cannot read</span>
 Set-Cookie: token=...; HttpOnly; Secure; SameSite=Strict
 
-<span class="good"># BEST for M2M: in-memory only</span>
-<span class="comment"># Store in a module-scoped variable, never persist</span>
+<span class="good"># COMMON M2M PATTERN: protected in-memory cache</span>
+<span class="comment"># Persist only when the threat model and platform require it</span>
 <span class="comment"># Refresh via client_credentials when expired</span>
             </div>
           </div>
@@ -1081,16 +1248,138 @@ Set-Cookie: token=...; HttpOnly; Secure; SameSite=Strict
             <div class="fact-group">
               <div class="fact-items">
                 <div class="fact-item bad"><span class="fact-icon">✗</span><span>localStorage is accessible by any JavaScript on the page. One XSS vulnerability = token theft.</span></div>
-                <div class="fact-item good"><span class="fact-icon">✓</span><span>HttpOnly cookies prevent JavaScript access. Still vulnerable to CSRF — pair with SameSite=Strict and CSRF tokens.</span></div>
-                <div class="fact-item good"><span class="fact-icon">✓</span><span>M2M services should keep tokens in memory only. Fetch a fresh token via client_credentials when the current one expires. Don't persist to disk.</span></div>
-                <div class="fact-item warn"><span class="fact-icon">!</span><span>AI agents running in containers: inject tokens at runtime via secrets mount, not environment variables. Env vars are visible to all processes in the container.</span></div>
+                <div class="fact-item good"><span class="fact-icon">✓</span><span>HttpOnly cookies prevent direct JavaScript reads, but injected scripts can still act through the browser. Choose SameSite behavior and CSRF defenses for the application's cross-site flows.</span></div>
+                <div class="fact-item good"><span class="fact-icon">✓</span><span>M2M services commonly use a protected in-memory cache. Persist a token only when the workload and availability design require it, using platform-protected storage with narrow access and a defined cleanup policy.</span></div>
+                <div class="fact-item warn"><span class="fact-icon">!</span><span>Environment variables can propagate to child processes and may be exposed through process inspection, diagnostics, or orchestration APIs. Prefer narrowly mounted or brokered runtime credentials when the platform supports them.</span></div>
               </div>
             </div>
           </div>
         </div>
         <div class="verdict-box medium">
           <div class="verdict-label">Storage Verdict</div>
-          <p>Where you store the token is as important as how you issue it. In-memory for M2M, HttpOnly cookie for browser apps. Never localStorage. The threat model is XSS for browsers and process inspection for services.</p>
+          <p>Choose storage from the client type and threat model. Browser applications commonly use a backend-for-frontend or Secure, HttpOnly cookies with CSRF defenses. M2M services commonly use a protected in-memory cache. Avoid exposing bearer tokens to script-readable browser storage.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-card critical" onclick="toggleControl(this, event)">
+      <div class="control-header">
+        <div class="control-header-left">
+          <div class="control-num">04</div>
+          <div class="control-title-group">
+            <h3>JWKS Resolution and Rotation</h3>
+            <div class="control-subtitle">Issuer Binding · kid Ambiguity · Cache State</div>
+          </div>
+        </div>
+        <div class="control-header-right">
+          <span class="badge badge-critical">Critical</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="control-body">
+        <div class="control-body-inner">
+          <div class="body-panel">
+            <div class="panel-label">Resolution Rules</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Configure trusted issuers and their HTTPS metadata or JWKS locations. Do not accept a token-supplied <code>jku</code> or <code>x5u</code> as an unrestricted fetch target.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Filter keys by intended use, algorithm, and key type. Reject duplicate eligible keys with the same <code>kid</code> as ambiguous instead of selecting by array order.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>On an unknown <code>kid</code>, perform a bounded refresh with request coalescing and cooldown. A miss must not create an attacker-controlled fetch loop.</span></div>
+            </div>
+          </div>
+          <div class="body-panel">
+            <div class="panel-label">Cache-State Tests</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Project baseline: a successful, well-formed set containing zero usable signing keys is authoritative and evicts the old set.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Project baseline: malformed, truncated, non-success, and transport-failed refreshes do not replace a last-known-good set, but the request that required the failed refresh still fails.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Test initial load, planned overlap rotation, rotated-out keys, duplicate <code>kid</code>, zero usable keys, malformed JSON, timeout, concurrency, cooldown, and recovery.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict-box critical">
+          <div class="verdict-label">Key-State Boundary</div>
+          <p>JWKS handling is a state machine, not a one-time signature lookup. Document which responses are authoritative and which are retrieval failures. Sources: <a href="https://www.rfc-editor.org/rfc/rfc8414.html">RFC 8414</a>, <a href="https://www.rfc-editor.org/rfc/rfc8725.html">RFC 8725</a>, and the <a href="https://openid.net/specs/fapi-security-profile-2_0-final.html#name-json-web-key-sets">FAPI 2.0 JWKS requirements</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-card high" onclick="toggleControl(this, event)">
+      <div class="control-header">
+        <div class="control-header-left">
+          <div class="control-num">05</div>
+          <div class="control-title-group">
+            <h3>Revocation and Introspection</h3>
+            <div class="control-subtitle">Early Termination · Opaque vs Self-Contained Tokens</div>
+          </div>
+        </div>
+        <div class="control-header-right">
+          <span class="badge badge-high">High</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="control-body">
+        <div class="control-body-inner">
+          <div class="body-panel">
+            <div class="panel-label">Choose the Enforcement Model</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item info"><span class="fact-icon">→</span><span>Self-contained JWTs support local validation, but a resource server will normally accept them until expiry unless it also consults current state.</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>Opaque tokens normally require introspection or gateway lookup, adding a live dependency but enabling centralized active-state decisions.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>A <code>jti</code> claim does not revoke anything by itself. A resource server must consult an authoritative denylist or another active-state mechanism.</span></div>
+            </div>
+          </div>
+          <div class="body-panel">
+            <div class="panel-label">Required Decisions and Tests</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Define maximum exposure after account disablement, logout, client compromise, signing-key compromise, and grant withdrawal.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Protect revocation and introspection endpoints with authenticated clients, least privilege, TLS, rate limits, and non-sensitive error responses.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Test that a revoked grant or inactive token becomes unusable within the documented bound, including through gateway and application caches.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict-box high">
+          <div class="verdict-label">Lifecycle Boundary</div>
+          <p>Short lifetimes limit exposure; they do not answer every immediate-revocation requirement. Sources: <a href="https://www.rfc-editor.org/rfc/rfc7009.html">RFC 7009</a> and <a href="https://www.rfc-editor.org/rfc/rfc7662.html">RFC 7662</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-card high" onclick="toggleControl(this, event)">
+      <div class="control-header">
+        <div class="control-header-left">
+          <div class="control-num">06</div>
+          <div class="control-title-group">
+            <h3>Delegation and Identity Chains</h3>
+            <div class="control-subtitle">Token Exchange · Actor Identity · Audience Narrowing</div>
+          </div>
+        </div>
+        <div class="control-header-right">
+          <span class="badge badge-high">High</span>
+          <span class="badge badge-ai">Agent</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="control-body">
+        <div class="control-body-inner">
+          <div class="body-panel">
+            <div class="panel-label">Unsafe Pattern</div>
+            <div class="code-block">
+User token → Agent A → Agent B → Data API
+<span class="bad">FAIL:</span> the same bearer token is forwarded through every hop
+<span class="good">PASS:</span> each hop obtains an audience-bound token with
+      narrowed rights and preserved subject/actor context
+            </div>
+          </div>
+          <div class="body-panel">
+            <div class="panel-label">Controls</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Separate the resource owner, requesting client, acting workload or agent, and target resource in policy and audit records.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Use token exchange only when supported by the trust architecture. Narrow audience, scope, lifetime, and delegation depth at every hop.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Reject token passthrough and confused-deputy designs where a middle tier forwards a token not issued for the downstream resource.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict-box high">
+          <div class="verdict-label">Delegation Boundary</div>
+          <p>Do not infer delegation merely because a service possesses a user's token. Preserve actor context and exchange for a token intended for the next resource. Source: <a href="https://www.rfc-editor.org/rfc/rfc8693.html">RFC 8693</a>.</p>
         </div>
       </div>
     </div>
@@ -1104,7 +1393,7 @@ Set-Cookie: token=...; HttpOnly; Secure; SameSite=Strict
 <div id="tab-gateway" class="section">
   <div class="section-header">
     <h2>API Gateway Enforcement</h2>
-    <p>Most security controls that live in application code get bypassed when requests hit the service directly. The gateway is the correct enforcement layer for auth, rate limiting, TLS termination, and input validation.</p>
+    <p>Use the gateway for shared edge controls such as TLS policy, coarse token validation, request limits, and rate limiting. Restrict direct service access. Keep object, property, tenant, and business authorization in the application or its policy layer.</p>
   </div>
 
   <div class="two-col">
@@ -1135,13 +1424,13 @@ Set-Cookie: token=...; HttpOnly; Secure; SameSite=Strict
   </div>
 
   <div class="controls-grid">
-    <div class="control-card high" onclick="toggleControl(this)">
+    <div class="control-card high" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">01</div>
           <div class="control-title-group">
-            <h3>Gateway Products — Security Comparison</h3>
-            <div class="control-subtitle">Kong, Apigee, AWS API GW, Azure APIM</div>
+            <h3>Gateway Security Evaluation</h3>
+            <div class="control-subtitle">Verify Behavior, Not Product Labels</div>
           </div>
         </div>
         <div class="control-header-right">
@@ -1153,25 +1442,157 @@ Set-Cookie: token=...; HttpOnly; Secure; SameSite=Strict
         <table class="matrix-table" style="border-radius:0; border:none; border-top: 1px solid var(--border);">
           <thead>
             <tr>
-              <th>Feature</th>
-              <th>Kong</th>
-              <th>Apigee</th>
-              <th>AWS API GW</th>
-              <th>Azure APIM</th>
+              <th>Requirement</th>
+              <th>Evidence to Require</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>mTLS enforcement</td><td><span class="dot-yes">✓</span></td><td><span class="dot-yes">✓</span></td><td><span class="dot-warn">Partial</span></td><td><span class="dot-yes">✓</span></td></tr>
-            <tr><td>JWT validation</td><td><span class="dot-yes">✓</span></td><td><span class="dot-yes">✓</span></td><td><span class="dot-yes">✓</span></td><td><span class="dot-yes">✓</span></td></tr>
-            <tr><td>Rate limiting (per key)</td><td><span class="dot-yes">✓</span></td><td><span class="dot-yes">✓</span></td><td><span class="dot-yes">✓</span></td><td><span class="dot-yes">✓</span></td></tr>
-            <tr><td>Request body inspection</td><td><span class="dot-yes">✓</span></td><td><span class="dot-yes">✓</span></td><td><span class="dot-warn">Via WAF</span></td><td><span class="dot-warn">Via policy</span></td></tr>
-            <tr><td>DPoP support</td><td><span class="dot-warn">Plugin</span></td><td><span class="dot-warn">Custom</span></td><td><span class="dot-no">✗</span></td><td><span class="dot-no">✗</span></td></tr>
-            <tr><td>AI token usage tracking</td><td><span class="dot-warn">Plugin</span></td><td><span class="dot-warn">Custom</span></td><td><span class="dot-warn">Bedrock only</span></td><td><span class="dot-yes">✓ APIM AI</span></td></tr>
-            <tr><td>Centralized audit log</td><td><span class="dot-yes">✓</span></td><td><span class="dot-yes">✓</span></td><td><span class="dot-yes">CloudTrail</span></td><td><span class="dot-yes">✓</span></td></tr>
+            <tr><td>JWT verification</td><td>Negative tests for wrong issuer, audience, type, algorithm, signature, time, and required claims.</td></tr>
+            <tr><td>JWKS lifecycle</td><td>Rotation, duplicate and unknown kid, malformed refresh, cache, cooldown, and revocation-state tests.</td></tr>
+            <tr><td>mTLS / DPoP</td><td>Handshake or proof validation, token confirmation binding, replay behavior, failure telemetry, and key rotation.</td></tr>
+            <tr><td>Authorization boundary</td><td>Document which coarse checks run at the gateway and which object, property, tenant, and business checks remain in the service.</td></tr>
+            <tr><td>Resource controls</td><td>Per-principal and per-tenant rate, concurrency, request-size, decoded-size, timeout, and cost limits.</td></tr>
+            <tr><td>Logging and privacy</td><td>Correlated security events with credential, token, prompt, personal-data, and body redaction verified.</td></tr>
+            <tr><td>Bypass resistance</td><td>Network tests prove protected services are not directly reachable around the gateway.</td></tr>
           </tbody>
         </table>
         <div style="padding:14px 20px; border-top:1px solid var(--border); font-size:13px; color:var(--muted);">
-          ! Point-in-time snapshot. Vendor features change frequently — verify each cell against current vendor documentation before making a procurement or architecture decision.
+          ! Product capability claims age quickly. Build a deployment-specific acceptance test and record the product version, configuration, and evidence.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB: API BOUNDARIES -->
+<!-- ============================================================ -->
+<div id="tab-boundaries" class="section">
+  <div class="section-header">
+    <h2>API Input, Output, and Egress Boundaries</h2>
+    <p>APIs cross trust boundaries in both directions. Validate what clients send, constrain where the service can connect, and treat upstream responses as untrusted input.</p>
+  </div>
+
+  <div class="controls-grid">
+    <div class="control-card critical" onclick="toggleControl(this, event)">
+      <div class="control-header">
+        <div class="control-header-left">
+          <div class="control-num">01</div>
+          <div class="control-title-group">
+            <h3>Server-Side Request Forgery</h3>
+            <div class="control-subtitle">OWASP API7:2023 · User-Controlled Destinations</div>
+          </div>
+        </div>
+        <div class="control-header-right">
+          <span class="badge badge-critical">Critical</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="control-body">
+        <div class="control-body-inner">
+          <div class="body-panel">
+            <div class="panel-label">Test Inputs</div>
+            <div class="code-block">
+<span class="bad">http://127.0.0.1/admin</span>
+<span class="bad">http://169.254.169.254/</span>
+<span class="bad">http://[::1]/</span>
+<span class="bad">https://allowed.example/redirect-to-private</span>
+<span class="bad">https://name-that-rebinds.example/</span>
+            </div>
+          </div>
+          <div class="body-panel">
+            <div class="panel-label">Required Controls</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Avoid arbitrary server-side fetches. Prefer identifiers mapped to configured destinations over caller-supplied URLs.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>When URLs are required, allowlist scheme, host, and port; resolve and reject loopback, link-local, private, multicast, and otherwise prohibited address ranges.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Revalidate every redirect target, restrict protocols, apply response-size and timeout limits, and enforce network egress policy independently of application validation.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Test alternate IP encodings, IPv6, redirects, DNS rebinding, credentials in URLs, and cloud metadata destinations.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict-box critical">
+          <div class="verdict-label">Egress Boundary</div>
+          <p>URL parsing alone is insufficient. Application validation and network egress restrictions must agree. Source: <a href="https://owasp.org/API-Security/editions/2023/en/0xa7-server-side-request-forgery/">OWASP API7:2023</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-card high" onclick="toggleControl(this, event)">
+      <div class="control-header">
+        <div class="control-header-left">
+          <div class="control-num">02</div>
+          <div class="control-title-group">
+            <h3>Unsafe Consumption of APIs</h3>
+            <div class="control-subtitle">OWASP API10:2023 · Upstream Responses Are Untrusted</div>
+          </div>
+        </div>
+        <div class="control-header-right">
+          <span class="badge badge-high">High</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="control-body">
+        <div class="control-body-inner">
+          <div class="body-panel">
+            <div class="panel-label">Common Failure</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item bad"><span class="fact-icon">✗</span><span>The service trusts a partner API more than a public client, then writes unexpected fields, follows redirects, renders markup, or passes upstream text into an interpreter or LLM tool loop.</span></div>
+              <div class="fact-item bad"><span class="fact-icon">✗</span><span>Long timeouts, unlimited retries, and unbounded response bodies let an upstream dependency exhaust local resources.</span></div>
+            </div>
+          </div>
+          <div class="body-panel">
+            <div class="panel-label">Controls and Verification</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Validate upstream status, media type, schema, size, and semantic bounds before using the response. Ignore or reject unknown security-sensitive fields.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Use TLS verification, explicit destinations, bounded timeouts, bounded retries with backoff, circuit breakers, and separate credentials per dependency.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Fuzz malformed, oversized, slow, redirected, duplicated-field, and semantically hostile upstream responses.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>Retrieved text used by an LLM remains untrusted even when it came from an authenticated partner API.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict-box high">
+          <div class="verdict-label">Dependency Boundary</div>
+          <p>Authentication of an upstream system does not make all of its data safe for every downstream use. Source: <a href="https://owasp.org/API-Security/editions/2023/en/0xaa-unsafe-consumption-of-apis/">OWASP API10:2023</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-card high" onclick="toggleControl(this, event)">
+      <div class="control-header">
+        <div class="control-header-left">
+          <div class="control-num">03</div>
+          <div class="control-title-group">
+            <h3>Request and Response Contracts</h3>
+            <div class="control-subtitle">Schema · Content Type · Size · Error Surface</div>
+          </div>
+        </div>
+        <div class="control-header-right">
+          <span class="badge badge-high">High</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="control-body">
+        <div class="control-body-inner">
+          <div class="body-panel">
+            <div class="panel-label">Contract Controls</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Allowlist media types, methods, fields, enum values, numeric ranges, collection lengths, nesting depth, and total decoded bytes before expensive processing.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Define duplicate-key handling, reject non-finite numbers where the contract requires interoperable JSON, and avoid unsafe native-object deserialization.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Return stable error codes and correlation identifiers without stack traces, credentials, internal paths, SQL fragments, prompts, or upstream response bodies.</span></div>
+            </div>
+          </div>
+          <div class="body-panel">
+            <div class="panel-label">Verification</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Generate negative tests from the API schema and add adversarial cases for duplicate fields, deep nesting, oversized compressed bodies, unsupported encodings, and ambiguous Unicode.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Test the decoded-body limit, not only the compressed wire size, and apply limits before logging or buffering entire bodies.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Validate response schemas too, particularly where authorization determines which properties may leave the service.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict-box high">
+          <div class="verdict-label">Contract Boundary</div>
+          <p>A schema is both an interoperability contract and a security allowlist. Keep authorization checks separate because valid shape does not imply permitted access.</p>
         </div>
       </div>
     </div>
@@ -1188,7 +1609,7 @@ Set-Cookie: token=...; HttpOnly; Secure; SameSite=Strict
   </div>
 
   <div class="controls-grid">
-    <div class="control-card critical" onclick="toggleControl(this)">
+    <div class="control-card critical" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">01</div>
@@ -1223,14 +1644,14 @@ Set-Cookie: token=...; HttpOnly; Secure; SameSite=Strict
               <div class="fact-item good"><span class="fact-icon">✓</span><span>Per IP address — secondary control for unauthenticated endpoints</span></div>
               <div class="fact-item good"><span class="fact-icon">✓</span><span>Per endpoint — your inference endpoint needs tighter limits than your health check</span></div>
               <div class="fact-item good"><span class="fact-icon">✓</span><span>Per user (for multi-tenant AI) — prevent one tenant from degrading others</span></div>
-              <div class="fact-item warn"><span class="fact-icon">!</span><span>AI-specific: rate limit on token input/output, not just request count. A single request with a 100K token prompt costs the same as 1000 normal requests.</span></div>
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Return 429 with Retry-After header. Never silently drop requests — callers need to back off correctly.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>AI-specific: limit input tokens, output tokens, concurrent work, and cost in addition to request count. Requests can differ by orders of magnitude in compute and spend.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>When rejecting a request for rate limits, return 429 and communicate retry timing where it is safe and meaningful for the policy.</span></div>
             </div>
           </div>
         </div>
         <div class="verdict-box info">
           <div class="verdict-label">AI Endpoint Verdict</div>
-          <p>Standard request-count rate limiting is insufficient for AI inference endpoints. You need token-based limits (input + output tokens per minute) and cost-based limits in addition to request counts. A single adversarial prompt can consume more resources than thousands of normal requests.</p>
+          <p>Request-count limits alone can miss large differences in inference cost. Combine them with bounds on input and output tokens, concurrency, execution time, tool calls, and spend where those dimensions apply.</p>
         </div>
       </div>
     </div>
@@ -1247,7 +1668,7 @@ Set-Cookie: token=...; HttpOnly; Secure; SameSite=Strict
   </div>
 
   <div class="controls-grid">
-    <div class="control-card high" onclick="toggleControl(this)">
+    <div class="control-card high" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">01</div>
@@ -1266,14 +1687,14 @@ Set-Cookie: token=...; HttpOnly; Secure; SameSite=Strict
           <div class="body-panel">
             <div class="panel-label">Verification Pattern</div>
             <div class="code-block">
-<span class="comment"># Sender (e.g., Stripe, GitHub) signs the payload:</span>
+<span class="comment"># Illustrative GitHub-compatible example:</span>
 signature = HMAC-SHA256(raw_body, webhook_secret)
-Header: <span class="key">X-Signature-256</span>: <span class="val">sha256={signature}</span>
+Header: <span class="key">X-Hub-Signature-256</span>: <span class="val">sha256={signature}</span>
 
-<span class="comment"># Your receiver MUST:</span>
+<span class="comment"># A compatible receiver must:</span>
 <span class="comment"># 1. Read raw body bytes BEFORE parsing JSON</span>
 <span class="comment"># 2. Compute expected signature</span>
-<span class="comment"># 3. Constant-time compare — NEVER string compare</span>
+<span class="comment"># 3. Compare the decoded signature in constant time</span>
 
 <span class="bad"># WRONG — timing attack vulnerable</span>
 if received_sig == expected_sig:
@@ -1285,18 +1706,18 @@ if hmac.compare_digest(received_sig, expected_sig):
           <div class="body-panel">
             <div class="panel-label">Required Controls</div>
             <div class="fact-items" style="gap:10px">
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Always verify the signature before processing the payload. Never process first, verify later.</span></div>
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Use constant-time comparison. String equality is vulnerable to timing attacks that reveal the signature byte by byte.</span></div>
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Validate a timestamp in the payload. Reject webhooks older than 5 minutes — prevents replay attacks.</span></div>
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Return 200 immediately, process async. Avoid webhook timeouts that trigger retries and replay edge cases.</span></div>
-              <div class="fact-item bad"><span class="fact-icon">✗</span><span>Do not trust IP allowlisting alone. Vendor IPs change. Payload verification is the correct control.</span></div>
-              <div class="fact-item warn"><span class="fact-icon">!</span><span>AI context: webhooks from LLM providers (model completion callbacks, fine-tune job completion) must be verified the same way. These can trigger privileged actions.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Complete the provider-defined authenticity check before executing business logic. For an HMAC scheme, verify the signature over the exact documented bytes before parsing or acting.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Decode the provider's signature representation and use a constant-time comparison function to avoid content-dependent comparison behavior.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>If the provider signs a timestamp, validate it within a documented window. Also reject duplicate event or delivery identifiers because a timestamp alone does not prevent replay inside the window.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Acknowledge promptly only after the event is durably accepted or recorded. Process asynchronously with idempotency so retries cannot repeat consequential work.</span></div>
+              <div class="fact-item bad"><span class="fact-icon">✗</span><span>Do not use source-IP allowlisting as the sole authenticity control. Verify the provider-defined signature or other authenticated transport independently.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>AI context: model-job callbacks need the same control objectives, but use the provider's documented authentication scheme and signed-byte definition. Treat any resulting privileged action as a separate authorization decision.</span></div>
             </div>
           </div>
         </div>
         <div class="verdict-box high">
           <div class="verdict-label">Webhook Verdict</div>
-          <p>An unverified webhook endpoint is an unauthenticated HTTP endpoint that can trigger business logic. Payload HMAC verification is the minimum required control. The two most common mistakes are string comparison instead of constant-time comparison, and processing before verifying.</p>
+          <p>A webhook receiver needs a provider-defined authenticity and integrity check, replay handling, durable acceptance, idempotent processing, and secret or key rotation. HMAC is common, but the exact signed bytes and header format are scheme-specific.</p>
         </div>
       </div>
     </div>
@@ -1313,7 +1734,7 @@ if hmac.compare_digest(received_sig, expected_sig):
   </div>
 
   <div class="controls-grid">
-    <div class="control-card critical" onclick="toggleControl(this)">
+    <div class="control-card critical" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">01</div>
@@ -1334,13 +1755,13 @@ if hmac.compare_digest(received_sig, expected_sig):
             <div class="code-block">
 <span class="comment"># 1. ORIGIN REFLECTION (Critical)</span>
 <span class="bad">Access-Control-Allow-Origin: [whatever the request sent]</span>
-<span class="comment"># Any origin can make credentialed requests. Complete bypass.</span>
+<span class="comment"># If credentials are allowed, an attacker origin may read the response.</span>
 
 <span class="comment"># 2. WILDCARD + CREDENTIALS (Invalid but dangerous when misconfigured)</span>
 <span class="bad">Access-Control-Allow-Origin: *</span>
 <span class="bad">Access-Control-Allow-Credentials: true</span>
-<span class="comment"># Browsers block this, but some frameworks silently fix it</span>
-<span class="comment"># to reflection, creating vuln #1 accidentally</span>
+<span class="comment"># Browsers reject this combination.</span>
+<span class="comment"># Reflecting the request Origin instead creates a credentialed cross-origin risk.</span>
 
 <span class="comment"># 3. NULL ORIGIN (High)</span>
 <span class="bad">Access-Control-Allow-Origin: null</span>
@@ -1357,8 +1778,9 @@ if hmac.compare_digest(received_sig, expected_sig):
             <div class="fact-items" style="gap:10px">
               <div class="fact-item good"><span class="fact-icon">✓</span><span>Maintain an explicit allowlist of permitted origins. Validate incoming Origin header against the list. Return the matching origin or nothing.</span></div>
               <div class="fact-item bad"><span class="fact-icon">✗</span><span>Never reflect the Origin header value directly into Access-Control-Allow-Origin without allowlist validation.</span></div>
-              <div class="fact-item bad"><span class="fact-icon">✗</span><span>Never allow Origin: null in production. No valid production use case.</span></div>
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>For public read-only APIs with no credentials: wildcard (*) is fine. For any API that sends cookies or uses Authorization headers: explicit origin required.</span></div>
+              <div class="fact-item bad"><span class="fact-icon">✗</span><span>Reject <code>Origin: null</code> unless a documented sandboxed or local-origin use case requires it and has an independent authorization boundary.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>A public, unauthenticated read-only resource may use wildcard (*). A browser request using credentials mode requires an explicit allowed origin rather than wildcard.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>When the allowed origin varies by request, send <code>Vary: Origin</code> so shared caches keep responses separate.</span></div>
               <div class="fact-item warn"><span class="fact-icon">!</span><span>CORS does not apply to server-to-server calls or curl. It is browser-only. CORS alone is not an API security control — it is a browser behavior control.</span></div>
               <div class="fact-item warn"><span class="fact-icon">!</span><span>AI apps served from a CDN calling an LLM backend: make sure the CORS policy allows the exact frontend origin. Wildcard here means any page on the internet can call your LLM endpoint from a user's browser.</span></div>
             </div>
@@ -1366,7 +1788,7 @@ if hmac.compare_digest(received_sig, expected_sig):
         </div>
         <div class="verdict-box critical">
           <div class="verdict-label">CORS Verdict</div>
-          <p>Origin reflection is the most dangerous and most common CORS misconfiguration. It effectively disables CORS for credentialed requests. Check your server's CORS library defaults — many frameworks have options that enable reflection by accident. Always use an explicit allowlist.</p>
+          <p>Unvalidated origin reflection can expose credentialed responses to an attacker-controlled origin. Review framework behavior and cache handling. Use an explicit allowlist and emit <code>Vary: Origin</code> when the response header varies by request.</p>
         </div>
       </div>
     </div>
@@ -1384,7 +1806,7 @@ if hmac.compare_digest(received_sig, expected_sig):
 
   <div class="controls-grid">
 
-    <div class="control-card critical" onclick="toggleControl(this)">
+    <div class="control-card critical" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">01</div>
@@ -1430,7 +1852,7 @@ if hmac.compare_digest(received_sig, expected_sig):
           <div class="body-panel">
             <div class="panel-label">Controls</div>
             <div class="fact-items" style="gap:10px">
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Treat all external data as untrusted input, including data fetched by the agent. Apply the same sanitization you'd apply to user input.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Treat all external data, including retrieved documents and tool output, as untrusted. Sanitization can block known patterns but is not a complete prompt-injection boundary.</span></div>
               <div class="fact-item good"><span class="fact-icon">✓</span><span>Separate system prompt from user-controlled input at the API call level. Use structured message formats, not string concatenation.</span></div>
               <div class="fact-item good"><span class="fact-icon">✓</span><span>Output validation: scan LLM responses for sensitive patterns (API key formats, JWT patterns, PII) before returning to caller.</span></div>
               <div class="fact-item good"><span class="fact-icon">✓</span><span>Principle of least privilege for agents: the agent's API credentials should only have access to what it needs for its specific task.</span></div>
@@ -1440,12 +1862,12 @@ if hmac.compare_digest(received_sig, expected_sig):
         </div>
         <div class="verdict-box critical">
           <div class="verdict-label">AI Threat Verdict</div>
-          <p>Prompt injection is the SQL injection of AI systems. The API layer can implement controls (input sanitization, output filtering, capability scoping) but cannot fully prevent it at the API level alone — the LLM itself has to be part of the defense. Treat it as an ongoing risk to manage, not a problem to solve once.</p>
+          <p>Prompt injection has no parameterization boundary equivalent to prepared SQL statements. Manage it with capability scoping, no ambient authority, approval for consequential actions, provenance-aware handling of retrieved content, and output validation. Input filtering alone is not sufficient.</p>
         </div>
       </div>
     </div>
 
-    <div class="control-card high" onclick="toggleControl(this)">
+    <div class="control-card high" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">02</div>
@@ -1494,7 +1916,7 @@ if hmac.compare_digest(received_sig, expected_sig):
               <div class="fact-item good"><span class="fact-icon">✓</span><span>Token-based rate limits per caller. Set max input tokens and max output tokens per request and per time window.</span></div>
               <div class="fact-item good"><span class="fact-icon">✓</span><span>Cost-based quotas per API key. Alert when a key's spend exceeds expected baseline.</span></div>
               <div class="fact-item good"><span class="fact-icon">✓</span><span>Detect systematic enumeration patterns in access logs. Low-volume, high-diversity queries probing the same endpoint are a signal.</span></div>
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>System prompt confidentiality: instruct the model not to reveal its system prompt. Also filter it from responses at the API layer.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>Do not put secrets in a system prompt or treat the prompt as a confidentiality boundary. Output filtering is only a secondary control because equivalent content can be transformed or paraphrased.</span></div>
             </div>
           </div>
         </div>
@@ -1505,7 +1927,7 @@ if hmac.compare_digest(received_sig, expected_sig):
       </div>
     </div>
 
-    <div class="control-card medium" onclick="toggleControl(this)">
+    <div class="control-card medium" onclick="toggleControl(this, event)">
       <div class="control-header">
         <div class="control-header-left">
           <div class="control-num">03</div>
@@ -1525,8 +1947,8 @@ if hmac.compare_digest(received_sig, expected_sig):
           <div class="body-panel">
             <div class="panel-label">Leakage Vectors</div>
             <div class="fact-items" style="gap:10px">
-              <div class="fact-item bad"><span class="fact-icon">✗</span><span>API keys and tokens in prompts — LLM providers log inputs. Keys in prompts = keys in vendor logs.</span></div>
-              <div class="fact-item bad"><span class="fact-icon">✗</span><span>PII sent to external LLM API without consent or legal basis — GDPR, HIPAA, CCPA violations depending on data type.</span></div>
+              <div class="fact-item bad"><span class="fact-icon">✗</span><span>API keys and tokens in prompts can propagate into provider, proxy, tracing, evaluation, or application logs. Treat a secret placed in model context as exposed beyond its intended boundary.</span></div>
+              <div class="fact-item bad"><span class="fact-icon">✗</span><span>Personal or regulated data sent to an external model without an approved purpose, data-flow review, retention policy, and contractual controls can violate organizational or legal obligations.</span></div>
               <div class="fact-item bad"><span class="fact-icon">✗</span><span>Cross-tenant data leakage in multi-user systems — one user's context bleeds into another's response when conversation history is mismanaged.</span></div>
               <div class="fact-item bad"><span class="fact-icon">✗</span><span>Verbose error responses from the LLM API revealing internal system details, file paths, or data schemas.</span></div>
             </div>
@@ -1535,15 +1957,100 @@ if hmac.compare_digest(received_sig, expected_sig):
             <div class="panel-label">Controls</div>
             <div class="fact-items" style="gap:10px">
               <div class="fact-item good"><span class="fact-icon">✓</span><span>PII detection and redaction before sending to external LLM. Use Presidio, AWS Comprehend, or equivalent.</span></div>
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Use private endpoints (Azure OpenAI, AWS Bedrock) for sensitive data — traffic stays within your cloud boundary.</span></div>
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Strict conversation isolation per user session. Never share conversation history or context across users.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Use approved private connectivity where it reduces network exposure, and separately verify provider processing, retention, training-use, regional, and support-access terms.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Isolate conversation state by principal and tenant by default. Any collaborative or shared context needs explicit authorization, provenance, and revocation behavior.</span></div>
               <div class="fact-item good"><span class="fact-icon">✓</span><span>Output scanning for PII and secrets before returning LLM response to caller.</span></div>
             </div>
           </div>
         </div>
         <div class="verdict-box medium">
           <div class="verdict-label">Data Leakage Verdict</div>
-          <p>Every API call to an external LLM is potentially a data transfer to a third party. Apply the same data classification controls you'd apply to any third-party data sharing: classify what's in the prompt, ensure legal basis, use private endpoints for sensitive data, and scan outputs before returning them.</p>
+          <p>Every call to an externally operated model is a potential third-party data transfer. Classify prompt and retrieval content, minimize it, confirm the approved purpose and contract, isolate tenants, and validate outputs. Private network connectivity does not settle data-use or retention questions.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-card critical" onclick="toggleControl(this, event)">
+      <div class="control-header">
+        <div class="control-header-left">
+          <div class="control-num">04</div>
+          <div class="control-title-group">
+            <h3>Agent Authority and Tool Use</h3>
+            <div class="control-subtitle">Excessive Agency · Tool Misuse · Consequential Actions</div>
+          </div>
+        </div>
+        <div class="control-header-right">
+          <span class="badge badge-critical">Critical</span>
+          <span class="badge badge-ai">Agent</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="control-body">
+        <div class="control-body-inner">
+          <div class="body-panel">
+            <div class="panel-label">Authority Model</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Give each agent an explicit allowlist of tools and operations. Do not expose destructive or administrative functions merely because the integration supports them.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Issue credentials per agent, tenant, task, and target resource where practical. Avoid shared ambient credentials inherited from the host process.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Re-authorize every tool call against the verified principal and current context. Model output is a request for an action, not proof that the action is permitted.</span></div>
+            </div>
+          </div>
+          <div class="body-panel">
+            <div class="panel-label">Approval and Verification</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Require a clear human confirmation for destructive, external-communication, financial, privilege-changing, or broad data-export actions.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Bind approval to the exact action parameters and expiry. Do not reuse a generic approval after the destination, scope, or payload changes.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Independently verify high-impact claims and action parameters before execution. Model confidence and fluent output are not evidence.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Define timeouts, circuit breakers, bounded retries, rollback or compensation, and an emergency stop so one agent failure does not cascade unchecked.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Test direct and indirect prompt injection, tool-argument substitution, approval bypass, confused deputy, cross-tenant calls, and retry after partial failure.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict-box critical">
+          <div class="verdict-label">Agent Boundary</div>
+          <p>The deterministic authorization layer, not the model, owns capability and approval decisions. Sources: <a href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/">OWASP LLM06:2025</a> and the <a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/">OWASP Agentic Top 10 2026</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-card high" onclick="toggleControl(this, event)">
+      <div class="control-header">
+        <div class="control-header-left">
+          <div class="control-num">05</div>
+          <div class="control-title-group">
+            <h3>AI Supply Chain, Retrieval, and Memory</h3>
+            <div class="control-subtitle">Models · Datasets · Embeddings · Tools · Persistent Context</div>
+          </div>
+        </div>
+        <div class="control-header-right">
+          <span class="badge badge-high">High</span>
+          <span class="badge badge-ai">AI-Specific</span>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="control-body">
+        <div class="control-body-inner">
+          <div class="body-panel">
+            <div class="panel-label">Assets and Trust Boundaries</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item bad"><span class="fact-icon">✗</span><span>Models, adapters, datasets, prompt templates, agent skills, MCP servers, embedding models, vector indexes, and evaluation data can introduce malicious or corrupted behavior.</span></div>
+              <div class="fact-item bad"><span class="fact-icon">✗</span><span>Persistent memory can turn one malicious interaction into durable instructions or cross-session data leakage.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>Similarity search is not authorization. Retrieval must enforce tenant and document permissions before content enters model context.</span></div>
+            </div>
+          </div>
+          <div class="body-panel">
+            <div class="panel-label">Controls and Verification</div>
+            <div class="fact-items" style="gap:10px">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Pin and inventory model, tool, skill, and server identities; verify provenance and signatures where available; review permissions before installation or update.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Partition retrieval and memory by tenant and principal. Apply authorization before retrieval and again before returning cited source content.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Make memory writes explicit, attributable, reviewable, and reversible. Treat retrieved and remembered content as untrusted on every later use.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Test poisoned documents, adversarial metadata, stale permissions, deleted sources, malicious tool descriptions, compromised dependencies, and cross-tenant vector matches.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="verdict-box high">
+          <div class="verdict-label">Supply-Chain Boundary</div>
+          <p>AI artifacts and retrieved content are executable influence even when they are not executable code. Sources: <a href="https://genai.owasp.org/llmrisk/llm032025-supply-chain/">OWASP LLM03:2025</a>, <a href="https://genai.owasp.org/llmrisk/llm042025-data-and-model-poisoning/">LLM04:2025</a>, and <a href="https://genai.owasp.org/llmrisk/llm082025-vector-and-embedding-weaknesses/">LLM08:2025</a>.</p>
         </div>
       </div>
     </div>
@@ -1557,27 +2064,27 @@ if hmac.compare_digest(received_sig, expected_sig):
 <div id="tab-versioning" class="section">
   <div class="section-header">
     <h2>API Versioning and Deprecation Security</h2>
-    <p>Old API versions left running are a significant and underestimated attack surface. Security fixes applied to v3 often don't get backported to v1 and v2 that are still in production.</p>
+    <p>Every live API version remains part of the attack surface. Older versions become higher risk when fixes, authorization policies, inventory, monitoring, or gateway controls diverge from the current version.</p>
   </div>
 
   <div class="two-col">
     <div class="col-card">
       <h3>🔴 Why Old Versions Are Dangerous</h3>
       <div class="fact-items" style="gap:10px">
-        <div class="fact-item bad"><span class="fact-icon">✗</span><span>Security patches applied to current version are not applied to deprecated versions</span></div>
-        <div class="fact-item bad"><span class="fact-icon">✗</span><span>Old versions may have weaker auth requirements (no PKCE, no mTLS) that were upgraded in newer versions</span></div>
-        <div class="fact-item bad"><span class="fact-icon">✗</span><span>BOLA/IDOR fixes in current version often leave old endpoints exposed</span></div>
-        <div class="fact-item bad"><span class="fact-icon">✗</span><span>Old versions are often excluded from WAF rules and rate limiting because they're "legacy"</span></div>
-        <div class="fact-item bad"><span class="fact-icon">✗</span><span>AI integrations are especially vulnerable — early AI API integrations were often built against v1 endpoints with weaker controls</span></div>
+        <div class="fact-item bad"><span class="fact-icon">✗</span><span>A patch applied only to the current version leaves any equivalent deprecated endpoint vulnerable.</span></div>
+        <div class="fact-item bad"><span class="fact-icon">✗</span><span>Older versions may retain weaker authentication or token-validation requirements after the current version changes.</span></div>
+        <div class="fact-item bad"><span class="fact-icon">✗</span><span>Object-authorization fixes must be verified across every version that exposes the same resource.</span></div>
+        <div class="fact-item bad"><span class="fact-icon">✗</span><span>Route-specific gateway, WAF, schema, and rate-limit rules can drift or omit legacy endpoints.</span></div>
+        <div class="fact-item warn"><span class="fact-icon">!</span><span>Generated clients, agent tools, and long-lived integrations can keep an old version active after normal user interfaces have migrated.</span></div>
       </div>
     </div>
     <div class="col-card">
       <h3>✅ Deprecation Controls</h3>
       <div class="fact-items" style="gap:10px">
         <div class="fact-item good"><span class="fact-icon">✓</span><span>Maintain an API version inventory. Know which versions are live, who is using them, and what their security posture is.</span></div>
-        <div class="fact-item good"><span class="fact-icon">✓</span><span>Set and enforce sunset dates. Return Deprecation and Sunset headers in every response from deprecated endpoints.</span></div>
+        <div class="fact-item good"><span class="fact-icon">✓</span><span>Set and enforce sunset dates. Use the Deprecation header and deprecation documentation link from RFC 9745, plus the Sunset header from RFC 8594 when a shutdown date is planned.</span></div>
         <div class="fact-item good"><span class="fact-icon">✓</span><span>Apply the same gateway security controls (auth, rate limiting, WAF) to all versions, not just current.</span></div>
-        <div class="fact-item good"><span class="fact-icon">✓</span><span>Force migration deadlines. Hard cutoff with 410 Gone response, not indefinite backwards compatibility.</span></div>
+        <div class="fact-item good"><span class="fact-icon">✓</span><span>Enforce a reviewed migration deadline. After shutdown, return a status and documentation appropriate to the resource state; 410 Gone is suitable when it is intentionally and permanently unavailable.</span></div>
         <div class="fact-item good"><span class="fact-icon">✓</span><span>Monitor old version usage. Alert on any traffic to sunset endpoints — it's either a migration failure or an attacker who found a soft target.</span></div>
       </div>
     </div>
@@ -1594,7 +2101,7 @@ if hmac.compare_digest(received_sig, expected_sig):
   </div>
 
   <div style="margin-bottom:24px; display:flex; align-items:center; gap:16px;">
-    <div id="progress-text" style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted);">0 / 20 complete</div>
+    <div id="progress-text" style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted);">0 / 30 complete</div>
     <div style="flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden;">
       <div id="progress-bar" style="height:100%; width:0%; background:var(--green); transition:width 0.3s; border-radius:2px;"></div>
     </div>
@@ -1602,63 +2109,63 @@ if hmac.compare_digest(received_sig, expected_sig):
   </div>
 
   <div class="checklist" id="checklist">
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
         <h4>API keys never appear in URL query parameters</h4>
-        <p>Header-only transport. Scan logs for api_key= or token= in URL patterns.</p>
+        <p>Use the documented header scheme. Scan logs for api_key= or token= in URL patterns.</p>
       </div>
       <span class="badge badge-critical check-badge">Critical</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>All secrets stored in vault, not environment variables or config files</h4>
-        <p>CyberArk, AWS Secrets Manager, HashiCorp Vault. Rotation policy defined.</p>
+        <h4>Secrets use an approved runtime mechanism and rotation policy</h4>
+        <p>Not committed, baked into images, or stored in plaintext configuration. Exposure through environment, process, diagnostic, and orchestration surfaces has been assessed.</p>
       </div>
       <span class="badge badge-critical check-badge">Critical</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
         <h4>JWT algorithm explicitly allowlisted server-side</h4>
-        <p>alg:none rejected. RS256 or ES256 enforced. Never trust the token's alg header.</p>
+        <p>alg:none rejected. An approved algorithm set is enforced for the token profile. Never select the verifier from an untrusted alg header alone.</p>
       </div>
       <span class="badge badge-critical check-badge">Critical</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>JWT claims fully validated: exp, aud, iss, sub</h4>
-        <p>All four claims checked on every token. aud validated against explicit allowlist.</p>
+        <h4>JWT profile and required claims explicitly enforced</h4>
+        <p>Token type, algorithm, issuer, audience, time claims, and every profile-required claim are configured explicitly. Wrong token types and audiences are rejected.</p>
       </div>
       <span class="badge badge-critical check-badge">Critical</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>CORS origin allowlist in place — no reflection, no null origin</h4>
-        <p>Explicit list. No dynamic reflection of Origin header. Null origin blocked.</p>
+        <h4>CORS origin allowlist in place — no dynamic reflection</h4>
+        <p>Use an explicit list. Reject the null origin unless a documented use case and compensating controls require it.</p>
       </div>
       <span class="badge badge-critical check-badge">Critical</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>Webhook payloads verified with HMAC before processing</h4>
-        <p>Constant-time comparison. Timestamp replay window enforced. Verify before acting.</p>
+        <h4>Webhook authenticity and replay controls match the provider's scheme</h4>
+        <p>Verify the exact signed bytes before acting. Where supplied, validate signed time and event identifiers; process idempotently.</p>
       </div>
       <span class="badge badge-high check-badge">High</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>Rate limiting on all endpoints — request count and token volume for AI</h4>
-        <p>Per-client, per-endpoint. AI endpoints also rate limited on input/output token count.</p>
+        <h4>Rate-limit coverage is documented for every reachable endpoint</h4>
+        <p>Document exceptions. Apply per-client and per-operation controls; AI endpoints also bound tokens, concurrency, time, tool calls, and cost where applicable.</p>
       </div>
       <span class="badge badge-high check-badge">High</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
         <h4>TLS 1.2 minimum enforced at gateway. TLS 1.0/1.1 disabled.</h4>
@@ -1666,31 +2173,31 @@ if hmac.compare_digest(received_sig, expected_sig):
       </div>
       <span class="badge badge-high check-badge">High</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>M2M services use Client Credentials flow, not user-delegated tokens</h4>
-        <p>No shared user accounts for service-to-service calls. Each service has its own identity.</p>
+        <h4>M2M services use non-user workload identities and appropriate grants</h4>
+        <p>No shared user accounts for service-to-service calls. Use client credentials, workload identity, token exchange, or another reviewed non-user design as applicable.</p>
       </div>
       <span class="badge badge-high check-badge">High</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>Deprecated API versions have same security controls as current version</h4>
-        <p>Same gateway rules, same WAF, same rate limiting. Sunset date set and enforced.</p>
+        <h4>Deprecated API versions retain an equivalent security baseline</h4>
+        <p>Authentication, authorization, gateway, schema, monitoring, and abuse controls remain effective until the sunset date is enforced.</p>
       </div>
       <span class="badge badge-high check-badge">High</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>Access tokens short-lived (15 min or less). Refresh tokens rotated on use.</h4>
-        <p>Long-lived access tokens are compromise multipliers. Minimize exposure window.</p>
+        <h4>Token lifetime, renewal, and early-revocation bounds are documented</h4>
+        <p>Access-token exposure, refresh-token rotation, introspection, revocation, cache behavior, and authorization-server availability are tested against the threat model.</p>
       </div>
       <span class="badge badge-high check-badge">High</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
         <h4>API keys scoped to minimum required permissions</h4>
@@ -1698,7 +2205,7 @@ if hmac.compare_digest(received_sig, expected_sig):
       </div>
       <span class="badge badge-medium check-badge">Medium</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
         <h4>Request size limits enforced at gateway</h4>
@@ -1706,15 +2213,15 @@ if hmac.compare_digest(received_sig, expected_sig):
       </div>
       <span class="badge badge-medium check-badge">Medium</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>All API traffic logged with request ID for correlation</h4>
-        <p>Auth failures, 4xx/5xx rates, usage anomalies. Centralized log aggregation.</p>
+        <h4>Security-relevant API events carry a request ID for correlation</h4>
+        <p>Record auth failures, policy denials, 4xx/5xx rates, and usage anomalies with sensitive fields redacted. Document intentionally unlogged traffic.</p>
       </div>
       <span class="badge badge-medium check-badge">Medium</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
         <h4>Error responses do not expose internal details</h4>
@@ -1722,31 +2229,31 @@ if hmac.compare_digest(received_sig, expected_sig):
       </div>
       <span class="badge badge-medium check-badge">Medium</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>[AI] LLM API keys not present in prompts or context windows</h4>
-        <p>LLM providers log inputs. Keys in prompts are keys in vendor logs. Use secrets injection at runtime.</p>
+        <h4>[AI] Secrets are excluded from prompts, retrieval, memory, and context windows</h4>
+        <p>Model context can propagate into application, proxy, tracing, evaluation, or provider systems. Inject credentials only at the deterministic tool boundary.</p>
       </div>
       <span class="badge badge-ai check-badge">AI</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>[AI] PII detected and redacted before sending to external LLM endpoints</h4>
-        <p>Classification-based redaction. Presidio, Comprehend, or equivalent. Logged.</p>
+        <h4>[AI] External-model data flows are classified, minimized, and approved</h4>
+        <p>Purpose, retention, training use, region, contract, tenant isolation, and necessary redaction or transformation are documented.</p>
       </div>
       <span class="badge badge-ai check-badge">AI</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>[AI] LLM output scanned for sensitive data before returning to caller</h4>
-        <p>PII patterns, API key patterns, JWT patterns. Block or redact before API response.</p>
+        <h4>[AI] Model output is validated for its downstream use</h4>
+        <p>Apply schema, authorization, encoding, destination, and sensitive-data checks before displaying output, executing code, calling tools, or sending external messages.</p>
       </div>
       <span class="badge badge-ai check-badge">AI</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
         <h4>[AI] Agent capabilities scoped to minimum required for its task</h4>
@@ -1754,32 +2261,132 @@ if hmac.compare_digest(received_sig, expected_sig):
       </div>
       <span class="badge badge-ai check-badge">AI</span>
     </div>
-    <div class="checklist-item" onclick="toggleCheck(this)">
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
       <div class="check-box"></div>
       <div class="check-content">
-        <h4>[AI] Sensitive data processed via private endpoints, not public LLM APIs</h4>
-        <p>Azure OpenAI private endpoint, AWS Bedrock VPC endpoint, or equivalent. Traffic stays in your cloud boundary.</p>
+        <h4>[AI] Model-provider network and data-handling controls are reviewed separately</h4>
+        <p>Private connectivity reduces network exposure but does not by itself settle provider processing, retention, training, region, or support access.</p>
+      </div>
+      <span class="badge badge-ai check-badge">AI</span>
+    </div>
+
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
+      <div class="check-box"></div>
+      <div class="check-content">
+        <h4>Object and tenant authorization enforced on every resource operation</h4>
+        <p>Cross-user, cross-tenant, nested-resource, bulk, export, and guessed-identifier tests fail closed even with a valid token and scope.</p>
+      </div>
+      <span class="badge badge-critical check-badge">API1</span>
+    </div>
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
+      <div class="check-box"></div>
+      <div class="check-content">
+        <h4>Readable fields, writable fields, and privileged functions are allowlisted</h4>
+        <p>Mass assignment, confidential response properties, alternate methods, and administrative routes are tested with an ordinary principal.</p>
+      </div>
+      <span class="badge badge-critical check-badge">API3/5</span>
+    </div>
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
+      <div class="check-box"></div>
+      <div class="check-content">
+        <h4>Sensitive business flows enforce invariants beyond request-rate limits</h4>
+        <p>Quotas, state transitions, idempotency, concurrency, replay, and distributed low-rate automation are tested.</p>
+      </div>
+      <span class="badge badge-high check-badge">API6</span>
+    </div>
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
+      <div class="check-box"></div>
+      <div class="check-content">
+        <h4>JWKS rotation and failure-state matrix is tested</h4>
+        <p>Unknown and duplicate kid, zero usable keys, malformed/truncated response, timeout, concurrency, cooldown, rotation overlap, and recovery have explicit expected outcomes.</p>
+      </div>
+      <span class="badge badge-critical check-badge">Critical</span>
+    </div>
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
+      <div class="check-box"></div>
+      <div class="check-content">
+        <h4>Revoked or inactive tokens fail within the documented bound</h4>
+        <p>Revocation, introspection, denylist, gateway cache, application cache, and account-disable paths agree.</p>
+      </div>
+      <span class="badge badge-high check-badge">High</span>
+    </div>
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
+      <div class="check-box"></div>
+      <div class="check-content">
+        <h4>Server-side fetches resist SSRF bypasses</h4>
+        <p>Explicit destinations, address-range rejection, redirect revalidation, DNS rebinding, metadata endpoints, size/time limits, and network egress policy are tested.</p>
+      </div>
+      <span class="badge badge-critical check-badge">API7</span>
+    </div>
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
+      <div class="check-box"></div>
+      <div class="check-content">
+        <h4>Upstream API responses are treated as untrusted</h4>
+        <p>Status, media type, schema, size, redirects, timeouts, retries, and hostile content are validated before downstream use.</p>
+      </div>
+      <span class="badge badge-high check-badge">API10</span>
+    </div>
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
+      <div class="check-box"></div>
+      <div class="check-content">
+        <h4>[MCP] Resource metadata, PKCE, audience binding, and no token passthrough verified</h4>
+        <p>Remote HTTP MCP uses the pinned specification revision. Upstream API calls receive separate tokens intended for those resources.</p>
+      </div>
+      <span class="badge badge-ai check-badge">MCP</span>
+    </div>
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
+      <div class="check-box"></div>
+      <div class="check-content">
+        <h4>[AI] Consequential agent actions require parameter-bound approval</h4>
+        <p>Destructive, financial, privilege-changing, data-export, and external-communication actions cannot proceed on model output alone.</p>
+      </div>
+      <span class="badge badge-ai check-badge">Agent</span>
+    </div>
+    <div class="checklist-item" onclick="toggleCheck(this, event)">
+      <div class="check-box"></div>
+      <div class="check-content">
+        <h4>[AI] Retrieval and persistent memory enforce principal and tenant boundaries</h4>
+        <p>Poisoned content, malicious metadata, stale permissions, deleted sources, cross-tenant vector matches, and memory-write provenance are tested.</p>
       </div>
       <span class="badge badge-ai check-badge">AI</span>
     </div>
   </div>
 </div>
 
+<footer class="reference-footer">
+  <strong>Scope:</strong> HTTP and JSON API security baseline. GraphQL, gRPC, WebSocket, mobile-platform, and provider-specific configuration require separate review.<br>
+  <strong>Primary-source register:</strong> <a href="standards-and-sources.md">standards-and-sources.md</a> · Last reviewed 2026-08-16.
+</footer>
+
 <script>
   function switchTab(id, btn) {
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+      t.setAttribute('tabindex', '-1');
+    });
+    document.querySelectorAll('.section').forEach(s => {
+      s.classList.remove('active');
+      s.setAttribute('aria-hidden', 'true');
+    });
     btn.classList.add('active');
-    document.getElementById('tab-' + id).classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    btn.setAttribute('tabindex', '0');
+    const panel = document.getElementById('tab-' + id);
+    panel.classList.add('active');
+    panel.setAttribute('aria-hidden', 'false');
   }
 
-  function toggleControl(card) {
-    if (event.target.closest('.control-body')) return;
+  function toggleControl(card, clickEvent) {
+    if (clickEvent && clickEvent.target.closest('.control-body')) return;
     card.classList.toggle('open');
+    card.querySelector('.control-header').setAttribute('aria-expanded', card.classList.contains('open') ? 'true' : 'false');
   }
 
-  function toggleCheck(item) {
+  function toggleCheck(item, clickEvent) {
+    if (clickEvent) clickEvent.stopPropagation();
     item.classList.toggle('checked');
+    item.setAttribute('aria-checked', item.classList.contains('checked') ? 'true' : 'false');
     const box = item.querySelector('.check-box');
     if (item.classList.contains('checked')) {
       box.textContent = '✓';
@@ -1799,10 +2406,69 @@ if hmac.compare_digest(received_sig, expected_sig):
   function resetChecklist() {
     document.querySelectorAll('.checklist-item').forEach(item => {
       item.classList.remove('checked');
+      item.setAttribute('aria-checked', 'false');
       item.querySelector('.check-box').textContent = '';
     });
     updateProgress();
   }
+
+  const navTabs = Array.from(document.querySelectorAll('.nav-tab'));
+  const tabPanels = Array.from(document.querySelectorAll('.section'));
+  navTabs.forEach((tab, index) => {
+    const panel = tabPanels[index];
+    const tabId = 'topic-tab-' + index;
+    tab.id = tabId;
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
+    tab.setAttribute('tabindex', index === 0 ? '0' : '-1');
+    tab.setAttribute('aria-controls', panel.id);
+    tab.addEventListener('keydown', keyboardEvent => {
+      let targetIndex;
+      if (keyboardEvent.key === 'ArrowRight') targetIndex = (index + 1) % navTabs.length;
+      if (keyboardEvent.key === 'ArrowLeft') targetIndex = (index - 1 + navTabs.length) % navTabs.length;
+      if (keyboardEvent.key === 'Home') targetIndex = 0;
+      if (keyboardEvent.key === 'End') targetIndex = navTabs.length - 1;
+      if (targetIndex !== undefined) {
+        keyboardEvent.preventDefault();
+        navTabs[targetIndex].focus();
+        navTabs[targetIndex].click();
+      }
+    });
+  });
+
+  tabPanels.forEach((section, index) => {
+    section.setAttribute('role', 'tabpanel');
+    section.setAttribute('aria-labelledby', 'topic-tab-' + index);
+    section.setAttribute('aria-hidden', index === 0 ? 'false' : 'true');
+  });
+
+  document.querySelectorAll('.control-card').forEach(card => {
+    const header = card.querySelector('.control-header');
+    header.setAttribute('role', 'button');
+    header.setAttribute('tabindex', '0');
+    header.setAttribute('aria-expanded', 'false');
+    header.addEventListener('keydown', keyboardEvent => {
+      if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+        keyboardEvent.preventDefault();
+        keyboardEvent.stopPropagation();
+        toggleControl(card, keyboardEvent);
+      }
+    });
+  });
+
+  document.querySelectorAll('.checklist-item').forEach(item => {
+    item.setAttribute('role', 'checkbox');
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('aria-checked', 'false');
+    item.addEventListener('keydown', keyboardEvent => {
+      if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+        keyboardEvent.preventDefault();
+        toggleCheck(item, keyboardEvent);
+      }
+    });
+  });
+
+  updateProgress();
 </script>
 </body>
 </html>

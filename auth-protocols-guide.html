@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A versioned reference for OAuth, OpenID Connect, SAML, workload identity, FAPI, DPoP, and MCP authorization.">
 <title>Auth Protocols — AI Era</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Syne:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0a0c0f;
@@ -438,6 +439,7 @@
   .distinction-box.both  .db-label { color: var(--both); }
   .distinction-box.deprecated .db-label { color: var(--danger); }
   .distinction-box p { color: var(--muted); }
+  .protocol-boundary { margin: 20px 40px; }
 
   /* COMPARISON TABLE */
   .comparison-section {
@@ -485,6 +487,26 @@
   .comparison-table tr:hover td { background: rgba(255,255,255,0.015); }
   .comparison-table td:first-child { color: var(--text); font-weight: 500; }
 
+  a { color: var(--authz); }
+  a:hover { text-decoration-thickness: 2px; }
+
+  .card-header:focus-visible,
+  .filter-btn:focus-visible {
+    outline: 3px solid var(--authz);
+    outline-offset: -3px;
+  }
+
+  .reference-footer {
+    padding: 24px 40px 36px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.7;
+  }
+
+  .reference-footer strong { color: var(--text); }
+
   .dot-authn { color: var(--authn); }
   .dot-authz { color: var(--authz); }
   .dot-both  { color: var(--both); }
@@ -495,12 +517,21 @@
     header { padding: 32px 20px 24px; }
     .concept-strip { grid-template-columns: 1fr; }
     .concept-card { border-right: none; border-bottom: 1px solid var(--border); }
+    .protocol-boundary { margin: 20px; }
     .filter-bar { padding: 16px 20px; }
     .protocols-grid { padding: 20px; }
     .card-body-inner { grid-template-columns: 1fr; }
     .flow-panel { border-right: none; border-bottom: 1px solid var(--border); }
     .comparison-section { padding: 0 20px 40px; }
     .card-header { padding: 16px 18px; }
+    .reference-footer { padding: 22px 20px 32px; }
+  }
+
+  @media print {
+    .filter-bar { display: none; }
+    .protocol-card.hidden { display: block; }
+    .card-body { display: block !important; }
+    .protocol-card { break-inside: avoid; }
   }
 </style>
 </head>
@@ -508,7 +539,7 @@
 
 <header>
   <div class="header-label">// Reference Guide · Auth Protocols · AI Era</div>
-  <h1><span class="blue">AuthZ</span> vs <span class="green">AuthN</span><br>A Complete Protocol Reference</h1>
+  <h1><span class="blue">AuthZ</span> vs <span class="green">AuthN</span><br>A Practical Protocol Reference</h1>
   <p class="header-desc">
     AuthN = who are you &nbsp;|&nbsp; AuthZ = what are you allowed to do<br>
     Most protocols do one. A few do both. None of them are interchangeable.
@@ -520,35 +551,40 @@
   <div class="concept-card authn">
     <div class="concept-tag tag-authn">Authentication · AuthN</div>
     <div class="question">"Who are you?"</div>
-    <p>Verifies identity. Establishes that the caller is who they claim to be. Produces a credential (token, assertion, cert) that downstream systems can trust. Does not say anything about what the caller can do.</p>
+    <p>Verifies identity under a defined trust policy. It can produce a credential or authenticated session, but downstream systems must still validate that evidence for their own audience and context. Authentication alone does not decide what the caller may do.</p>
   </div>
   <div class="concept-card authz">
     <div class="concept-tag tag-authz">Authorization · AuthZ</div>
     <div class="question">"What can you do?"</div>
-    <p>Controls access. Given a verified identity (or just a token), determines what resources and operations are permitted. OAuth 2.0 is pure authZ — it grants scoped access without caring who the user is.</p>
+    <p>Controls access. Given a verified identity or client context, determines what resources and operations are permitted. OAuth 2.0 defines delegated authorization; it does not make an access token proof of end-user identity.</p>
   </div>
   <div class="concept-card both">
     <div class="concept-tag tag-both">Both Together</div>
     <div class="question">"Who + what?"</div>
-    <p>Full stack identity. Some protocols layer authN on top of an authZ foundation. OpenID Connect does this over OAuth 2.0. SAML bundles both in one assertion. Most real-world systems need both.</p>
+    <p>Most systems combine both decisions. OpenID Connect adds standardized end-user authentication to OAuth 2.0. SAML assertions can carry authentication and attribute statements, while the relying application still owns its authorization policy.</p>
   </div>
+</div>
+
+<div class="distinction-box authz protocol-boundary">
+  <div class="db-label">Protocol boundary</div>
+  <p>A valid access token, audience, and OAuth scope do not authorize a specific object, property, tenant, or business action. Every resource API must enforce those decisions against the verified principal and current resource. See the <a href="api-security-ai-era.html">Resource and Business Authorization</a> section.</p>
 </div>
 
 <!-- FILTER BAR -->
 <div class="filter-bar">
   <span class="filter-label">Filter:</span>
-  <button class="filter-btn active-all" onclick="filterCards('all', this)">All</button>
-  <button class="filter-btn" onclick="filterCards('authn', this)">AuthN Only</button>
-  <button class="filter-btn" onclick="filterCards('authz', this)">AuthZ Only</button>
-  <button class="filter-btn" onclick="filterCards('both', this)">Both</button>
-  <button class="filter-btn" onclick="filterCards('deprecated', this)">Deprecated</button>
+  <button class="filter-btn active-all" aria-pressed="true" onclick="filterCards('all', this)">All</button>
+  <button class="filter-btn" aria-pressed="false" onclick="filterCards('authn', this)">AuthN Only</button>
+  <button class="filter-btn" aria-pressed="false" onclick="filterCards('authz', this)">AuthZ Only</button>
+  <button class="filter-btn" aria-pressed="false" onclick="filterCards('both', this)">Both</button>
+  <button class="filter-btn" aria-pressed="false" onclick="filterCards('deprecated', this)">Legacy / Not Recommended</button>
 </div>
 
 <!-- PROTOCOLS GRID -->
 <div class="protocols-grid">
 
   <!-- OAuth 2.0 + PKCE -->
-  <div class="protocol-card authz-card" data-type="authz" onclick="toggleCard(this)">
+  <div class="protocol-card authz-card" data-type="authz" onclick="toggleCard(this, event)">
     <div class="card-header">
       <div class="card-header-left">
         <div class="card-title-group">
@@ -629,26 +665,26 @@
             <h4>What it does</h4>
             <div class="fact-items">
               <div class="fact-item info"><span class="fact-icon">→</span><span>Grants a client app scoped access to a resource on behalf of a user — without the user sharing their password with the app.</span></div>
-              <div class="fact-item info"><span class="fact-icon">→</span><span>PKCE adds a one-time code verifier, preventing auth code interception. Required for public clients (SPAs, mobile).</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>PKCE binds authorization-code redemption to a verifier held by the client, mitigating authorization-code interception. Current OAuth security guidance applies PKCE broadly, including public clients such as SPAs and native apps.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>AuthN vs AuthZ</h4>
             <div class="fact-items">
-              <div class="fact-item warn"><span class="fact-icon">!</span><span>Pure AuthZ. OAuth 2.0 alone does NOT authenticate the user. You get a token scoped to permissions — not identity proof. Add OIDC if you need identity.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>OAuth 2.0 does not define end-user authentication. Do not treat an access token as proof that a user authenticated to the client. Use OpenID Connect when standardized end-user authentication is required.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>AI Relevance</h4>
             <div class="fact-items">
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Standard for user-facing AI apps (ChatGPT, Copilot, Claude.ai). Used wherever users delegate access to a service.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Appropriate for user-facing applications where a user delegates access to a client.</span></div>
               <div class="fact-item bad"><span class="fact-icon">✗</span><span>Not designed for agent-to-agent flows where there is no user present.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>Limitations</h4>
             <div class="fact-items">
-              <div class="fact-item warn"><span class="fact-icon">!</span><span>Tokens are bearer tokens — stolen token = access. No built-in proof of sender. Mitigate with DPoP or mTLS binding.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>OAuth access tokens are commonly bearer tokens unless a sender-constraining mechanism such as DPoP or mTLS is required and validated.</span></div>
             </div>
           </div>
         </div>
@@ -661,7 +697,7 @@
   </div>
 
   <!-- OpenID Connect -->
-  <div class="protocol-card both-card" data-type="both" onclick="toggleCard(this)">
+  <div class="protocol-card both-card" data-type="both" onclick="toggleCard(this, event)">
     <div class="card-header">
       <div class="card-header-left">
         <div class="card-title-group">
@@ -671,7 +707,7 @@
       </div>
       <div class="card-header-right">
         <span class="badge badge-both">AuthN + AuthZ</span>
-        <span class="badge badge-standard">Required for Identity</span>
+        <span class="badge badge-standard">Standardized User AuthN</span>
         <span class="chevron">▼</span>
       </div>
     </div>
@@ -705,25 +741,25 @@
                 <span class="step-arrow">→</span>
                 <span class="actor actor-client">App</span>
               </div>
-              <div class="step-action">ID Token + Access Token</div>
+              <div class="step-action">authorization code</div>
             </div>
             <div class="flow-step">
               <div class="step-num">04</div>
               <div class="step-actors">
                 <span class="actor actor-client">App</span>
                 <span class="step-arrow">→</span>
-                <span class="actor actor-api">Resource / API</span>
+                <span class="actor actor-server">Token Endpoint</span>
               </div>
-              <div class="step-action">validate JWT / claims</div>
+              <div class="step-action">code + verifier → ID token + access token</div>
             </div>
             <div class="flow-step">
               <div class="step-num">05</div>
               <div class="step-actors">
-                <span class="actor actor-api">UserInfo Endpoint</span>
-                <span class="step-arrow">→</span>
                 <span class="actor actor-client">App</span>
+                <span class="step-arrow">→</span>
+                <span class="actor actor-api">Resource API</span>
               </div>
-              <div class="step-action">sub, email, roles</div>
+              <div class="step-action">access token; API validates its token profile</div>
             </div>
           </div>
         </div>
@@ -732,21 +768,21 @@
           <div class="fact-group">
             <h4>What it adds over OAuth 2.0</h4>
             <div class="fact-items">
-              <div class="fact-item info"><span class="fact-icon">→</span><span>An ID Token (JWT) that proves who the user is — not just what they're allowed to do. This is the critical distinction.</span></div>
-              <div class="fact-item info"><span class="fact-icon">→</span><span>The ID token contains claims: sub (user ID), email, name, roles, session info. Signed by the IdP.</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>An ID Token that carries authentication claims for the client. The client must validate its issuer, audience, signature, nonce where applicable, time claims, and flow-specific requirements.</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>The ID token includes required claims such as <code>iss</code>, <code>sub</code>, <code>aud</code>, <code>exp</code>, and <code>iat</code>. Other identity or session claims are optional or request-dependent.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>AuthN vs AuthZ</h4>
             <div class="fact-items">
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Does both. ID Token = AuthN (who you are). Access Token = AuthZ (what you can do). Two tokens, two jobs.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>OIDC standardizes the authentication result for the client. The accompanying OAuth access token authorizes calls to its intended resource; the resource still applies its own policy.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>AI Relevance</h4>
             <div class="fact-items">
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Required when an AI system needs to assert user identity downstream — passing user context to LLMs, audit logging, or role-based access inside AI apps.</span></div>
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Used by: Okta, Entra ID, Google, Salesforce Einstein, Microsoft Copilot stack.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Appropriate when an AI application needs standardized end-user sign-in, session correlation, or authenticated user context at the client.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>Do not forward the ID token as a general-purpose downstream API credential. Pass a resource-specific access token or exchange it through an approved delegation design.</span></div>
             </div>
           </div>
           <div class="fact-group">
@@ -759,13 +795,13 @@
       </div>
       <div class="distinction-box both">
         <div class="db-label">AuthN + AuthZ Verdict</div>
-        <p>OIDC is the correct choice when you need both "who is this" and "what can they do." OAuth 2.0 alone gets you the second question only. If you're building AI workflows that need to log or act on behalf of a specific user, OIDC is the minimum viable standard.</p>
+        <p>Use OIDC when a client needs standardized end-user authentication. Use the OAuth access token, not the ID token, at resource APIs, and apply resource authorization separately from the login decision.</p>
       </div>
     </div>
   </div>
 
   <!-- SAML 2.0 -->
-  <div class="protocol-card both-card" data-type="both" onclick="toggleCard(this)">
+  <div class="protocol-card both-card" data-type="both" onclick="toggleCard(this, event)">
     <div class="card-header">
       <div class="card-header-left">
         <div class="card-title-group">
@@ -775,7 +811,7 @@
       </div>
       <div class="card-header-right">
         <span class="badge badge-both">AuthN + AuthZ</span>
-        <span class="badge badge-standard">Enterprise SSO Only</span>
+        <span class="badge badge-standard">Browser SSO Focus</span>
         <span class="chevron">▼</span>
       </div>
     </div>
@@ -837,13 +873,13 @@
             <h4>What it does</h4>
             <div class="fact-items">
               <div class="fact-item info"><span class="fact-icon">→</span><span>Browser-mediated SSO using signed XML assertions. The IdP vouches for the user to the SP via the browser as a relay.</span></div>
-              <div class="fact-item info"><span class="fact-icon">→</span><span>The assertion contains both identity (who) and attributes (roles, groups) — so it covers both AuthN and limited AuthZ.</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>The assertion can carry authentication and attribute statements. Roles or groups are inputs to the service provider's authorization policy, not authorization decisions by themselves.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>AuthN vs AuthZ</h4>
             <div class="fact-items">
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>AuthN: signed XML assertion proves identity at the IdP. AuthZ: attribute statements carry roles/permissions the SP can use for access control.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>AuthN: a correctly validated assertion communicates the IdP's authentication result. AuthZ: attribute statements can inform access control, but the SP must validate the assertion and enforce its own policy.</span></div>
             </div>
           </div>
           <div class="fact-group">
@@ -857,20 +893,20 @@
             <h4>Limitations</h4>
             <div class="fact-items">
               <div class="fact-item warn"><span class="fact-icon">!</span><span>XML complexity creates real attack surface: XXE injection, signature wrapping attacks. Mature but not simple.</span></div>
-              <div class="fact-item bad"><span class="fact-icon">✗</span><span>No modern API use case for new builds. Do not use for M2M or agent flows.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>Existing non-browser profiles can be an interoperability constraint, but SAML is not recommended for new M2M or agent API designs.</span></div>
             </div>
           </div>
         </div>
       </div>
       <div class="distinction-box both">
         <div class="db-label">AuthN + AuthZ Verdict</div>
-        <p>SAML handles both AuthN and AuthZ through a single signed assertion, but it's architecturally browser-bound. It's mature and widely supported in enterprise IdPs. Use it for SSO login flows only. Never for programmatic or agentic access.</p>
+        <p>SAML is mature and widely supported for enterprise browser SSO. Existing non-browser profiles should be assessed as legacy interoperability requirements; new programmatic or agentic API access should normally use an OAuth-based design.</p>
       </div>
     </div>
   </div>
 
   <!-- Client Credentials -->
-  <div class="protocol-card authz-card" data-type="authz" onclick="toggleCard(this)">
+  <div class="protocol-card authz-card" data-type="authz" onclick="toggleCard(this, event)">
     <div class="card-header">
       <div class="card-header-left">
         <div class="card-title-group">
@@ -894,7 +930,7 @@
               <div class="step-actors">
                 <span class="actor actor-client">Service / Agent</span>
               </div>
-              <div class="step-action">has client_id + client_secret</div>
+              <div class="step-action">has client identity + authentication method</div>
             </div>
             <div class="flow-step">
               <div class="step-num">02</div>
@@ -903,7 +939,7 @@
                 <span class="step-arrow">→</span>
                 <span class="actor actor-server">Auth Server</span>
               </div>
-              <div class="step-action">POST credentials + scope</div>
+              <div class="step-action">POST client authentication + scope</div>
             </div>
             <div class="flow-step">
               <div class="step-num">03</div>
@@ -945,34 +981,35 @@
           <div class="fact-group">
             <h4>AuthN vs AuthZ</h4>
             <div class="fact-items">
-              <div class="fact-item warn"><span class="fact-icon">!</span><span>Mostly AuthZ. The service presents a credential (which is a weak form of AuthN), but the output is a bearer token scoped to permissions — not an identity assertion.</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>The authorization server authenticates the client using its configured method, then issues an access token representing authorization for the target resource. This grant does not represent an end user.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>AI Relevance</h4>
             <div class="fact-items">
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>The go-to flow for agent-to-service calls, LLM orchestration, and automated pipelines with no user in the loop.</span></div>
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Combine with mTLS for sender-constrained tokens in high-security agent pipelines.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Appropriate for a service, workload, or agent acting on its own behalf with no resource owner in the grant.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Prefer asymmetric client authentication such as <code>private_key_jwt</code> (RFC 7523) or <code>tls_client_auth</code> (RFC 8705) when the authorization server and deployment support it.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Use mTLS or DPoP separately when access tokens also need sender constraint. Client authentication at the token endpoint does not automatically bind the resulting token.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>Limitations</h4>
             <div class="fact-items">
-              <div class="fact-item warn"><span class="fact-icon">!</span><span>Secret management is the hard part. client_secret must be stored in a secrets vault (CyberArk, AWS Secrets Manager), never in config files or environment variables.</span></div>
-              <div class="fact-item warn"><span class="fact-icon">!</span><span>Still bearer token. Stolen token = access. Pair with short TTLs and IP allowlisting where possible.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>If a shared client secret is used, store and rotate it through an approved runtime secret mechanism. Do not commit it or bake it into images.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>A bearer access token remains replayable after theft. Choose lifetime and sender constraint from the threat model; IP allowlists are only a secondary signal.</span></div>
             </div>
           </div>
         </div>
       </div>
       <div class="distinction-box authz">
         <div class="db-label">AuthZ Verdict</div>
-        <p>Client Credentials is the correct OAuth flow for M2M. No user, no browser, no redirect. The service authenticates itself and gets scoped access. The weak link is the secret — secure its storage and rotation or this flow's security collapses.</p>
+        <p>Client Credentials is the OAuth grant for a client acting on its own behalf. No user or browser is involved. Use a strong client-authentication method, narrowly scoped access, an explicit audience, and a token-lifecycle policy appropriate to the service.</p>
       </div>
     </div>
   </div>
 
   <!-- mTLS -->
-  <div class="protocol-card authn-card" data-type="authn" onclick="toggleCard(this)">
+  <div class="protocol-card authn-card" data-type="authn" onclick="toggleCard(this, event)">
     <div class="card-header">
       <div class="card-header-left">
         <div class="card-title-group">
@@ -982,7 +1019,7 @@
       </div>
       <div class="card-header-right">
         <span class="badge badge-authn">AuthN Primary</span>
-        <span class="badge badge-standard">Best for M2M</span>
+        <span class="badge badge-standard">High-Assurance M2M</span>
         <span class="chevron">▼</span>
       </div>
     </div>
@@ -1043,7 +1080,7 @@
           <div class="fact-group">
             <h4>What it does</h4>
             <div class="fact-items">
-              <div class="fact-item info"><span class="fact-icon">→</span><span>Both client and server present certificates. Verifies identity at the transport layer, not just the application layer. Token is bound to the cert — stolen token alone is useless.</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>Both client and server present certificates. The TLS peers validate certificate chains and identity under configured trust policies. With RFC 8705 certificate-bound tokens, a stolen token alone is insufficient if the resource server enforces the binding.</span></div>
             </div>
           </div>
           <div class="fact-group">
@@ -1055,8 +1092,8 @@
           <div class="fact-group">
             <h4>AI Relevance</h4>
             <div class="fact-items">
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Correct for MCP server auth, LLM orchestration service calls, agentic pipeline inter-service calls.</span></div>
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Used in FAPI 2.0 and open banking mandates. Eliminates bearer token theft risk at the transport layer.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Useful for workload authentication, LLM orchestration service calls, and agentic pipeline inter-service calls. It is not a substitute for the MCP HTTP authorization flow.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Used by FAPI 2.0 as one sender-constraining option. Certificate-bound access tokens reduce reuse of a stolen token because the caller must also prove possession of the private key.</span></div>
             </div>
           </div>
           <div class="fact-group">
@@ -1069,13 +1106,13 @@
       </div>
       <div class="distinction-box authn">
         <div class="db-label">AuthN Verdict</div>
-        <p>mTLS is the strongest available AuthN mechanism for M2M. It proves identity at the transport layer and the bound token proves the caller still holds the cert at request time. The cost is PKI complexity — you need a CA, cert issuance, rotation, and revocation infrastructure. For high-value agent pipelines, that cost is justified.</p>
+        <p>mTLS provides high-assurance mutual authentication when certificate issuance, private-key protection, identity mapping, rotation, and revocation are operated correctly. Certificate-bound access tokens add proof of possession, but resource authorization remains a separate decision.</p>
       </div>
     </div>
   </div>
 
   <!-- DPoP -->
-  <div class="protocol-card authz-card" data-type="authz" onclick="toggleCard(this)">
+  <div class="protocol-card authz-card" data-type="authz" onclick="toggleCard(this, event)">
     <div class="card-header">
       <div class="card-header-left">
         <div class="card-title-group">
@@ -1085,7 +1122,7 @@
       </div>
       <div class="card-header-right">
         <span class="badge badge-authz">AuthZ + Binding</span>
-        <span class="badge badge-standard">Emerging Best Practice</span>
+        <span class="badge badge-standard">RFC 9449</span>
         <span class="chevron">▼</span>
       </div>
     </div>
@@ -1099,7 +1136,7 @@
               <div class="step-actors">
                 <span class="actor actor-client">Client / Agent</span>
               </div>
-              <div class="step-action">generate ephemeral keypair</div>
+              <div class="step-action">generate or load a protected keypair</div>
             </div>
             <div class="flow-step">
               <div class="step-num">02</div>
@@ -1142,38 +1179,38 @@
           <div class="fact-group">
             <h4>What it does</h4>
             <div class="fact-items">
-              <div class="fact-item info"><span class="fact-icon">→</span><span>Binds an access token to a client's private key. Every request requires a fresh signed proof — token alone is worthless without the key.</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>Binds an access token to a client's public key. Each request carries a signed proof, so a stolen token cannot be used without the corresponding private key and an acceptable proof.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>vs mTLS</h4>
             <div class="fact-items">
-              <div class="fact-item info"><span class="fact-icon">→</span><span>DPoP works at the application layer — no cert infrastructure needed. Lighter to implement but slightly weaker than mTLS cert binding. No PKI required.</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>DPoP works at the application layer without client-certificate infrastructure. Its replay, proxy, key-storage, and deployment properties differ from mTLS; neither mechanism is universally stronger for every threat model.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>AI Relevance</h4>
             <div class="fact-items">
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>High value in agentic pipelines where bearer tokens pass through multiple hops. A compromised agent in the middle can't replay a stolen token.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Useful where bearer-token theft is a material risk and the client can protect the bound private key. It does not protect against compromise of both the token and that key.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>Limitations</h4>
             <div class="fact-items">
-              <div class="fact-item warn"><span class="fact-icon">!</span><span>Not yet universally supported by all API servers. Nonce replay protection is commonly implemented with server-side state, though stateless designs (signed or encrypted nonces) are possible. Either way it adds complexity.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>Requires compatible authorization-server, client, and resource-server implementations. Proof replay, URI normalization, proxy handling, nonce use, clock skew, and private-key storage need explicit design and tests.</span></div>
             </div>
           </div>
         </div>
       </div>
       <div class="distinction-box authz">
         <div class="db-label">AuthZ + Token Binding Verdict</div>
-        <p>DPoP is the practical middle ground between bare bearer tokens (weak) and full mTLS (operationally heavy). It gives you sender-constrained tokens without a PKI. If your environment can't do mTLS, DPoP is the right upgrade from vanilla bearer tokens.</p>
+        <p>DPoP is an application-layer sender-constraining option when certificate-bound tokens are unsuitable. Validate proof method, URI, key binding, time, nonce where used, and replay identifiers according to RFC 9449.</p>
       </div>
     </div>
   </div>
 
   <!-- FAPI 2.0 -->
-  <div class="protocol-card both-card" data-type="both" onclick="toggleCard(this)">
+  <div class="protocol-card both-card" data-type="both" onclick="toggleCard(this, event)">
     <div class="card-header">
       <div class="card-header-left">
         <div class="card-title-group">
@@ -1183,14 +1220,14 @@
       </div>
       <div class="card-header-right">
         <span class="badge badge-both">AuthN + AuthZ</span>
-        <span class="badge badge-standard">Regulated Data / Healthcare</span>
+        <span class="badge badge-standard">High-Security Profile</span>
         <span class="chevron">▼</span>
       </div>
     </div>
     <div class="card-body">
       <div class="card-body-inner">
         <div class="flow-panel">
-          <div class="panel-label">FAPI 2.0 = OAuth 2.1 + PAR + mTLS/DPoP</div>
+          <div class="panel-label">FAPI 2.0 authorization-code flow</div>
           <div class="flow-steps">
             <div class="flow-step">
               <div class="step-num">01</div>
@@ -1217,7 +1254,7 @@
                 <span class="step-arrow">→</span>
                 <span class="actor actor-server">Auth Server</span>
               </div>
-              <div class="step-action">redirect with request_uri only</div>
+              <div class="step-action">redirect with client_id + request_uri</div>
             </div>
             <div class="flow-step">
               <div class="step-num">04</div>
@@ -1244,48 +1281,147 @@
           <div class="fact-group">
             <h4>What it is</h4>
             <div class="fact-items">
-              <div class="fact-item info"><span class="fact-icon">→</span><span>A security profile layered on top of OAuth 2.1. It mandates PAR, mTLS or DPoP, and short-lived tokens. Not a new protocol — a stricter ruleset.</span></div>
-              <div class="fact-item info"><span class="fact-icon">→</span><span>PAR (Pushed Auth Requests): auth parameters sent back-channel first, so they never appear in the browser URL. Prevents parameter tampering.</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>A final security profile based on OAuth 2.0 (RFC 6749) and the OAuth Security BCP (RFC 9700). It requires sender-constrained access tokens using mTLS or DPoP. Authorization-endpoint flows additionally require PAR and PKCE.</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>PAR sends the authorization request parameters to the authorization server over a back channel, then uses a request URI at the browser-facing authorization endpoint.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>AuthN vs AuthZ</h4>
             <div class="fact-items">
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Strong AuthN through mandatory mTLS or DPoP. Strong AuthZ through sender-constrained scoped tokens. Both are enforced, not optional.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Strong client and token-holder assurance comes from client authentication and sender-constrained tokens. Resource authorization still depends on scopes, grants, and resource-server policy.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>AI Relevance</h4>
             <div class="fact-items">
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>Required for AI systems touching PHI, financial data, or regulated PII. Applies directly to healthcare and fintech contexts.</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>Project recommendation: consider FAPI 2.0 for high-value or regulated-data APIs when its attacker model and interoperability profile fit. Handling PHI or PII does not itself create a universal FAPI mandate.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>Limitations</h4>
             <div class="fact-items">
-              <div class="fact-item warn"><span class="fact-icon">!</span><span>Significant implementation overhead. Most AI SaaS vendors do not support it natively — requires gateway or proxy enforcement.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>Significant implementation and operational overhead. The authorization server, client, resource server, and key-management processes must conform to the same profile; verify interoperability before adoption.</span></div>
             </div>
           </div>
         </div>
       </div>
       <div class="distinction-box both">
         <div class="db-label">AuthN + AuthZ Verdict</div>
-        <p>FAPI 2.0 is what you mandate when the data is sensitive enough that you can't accept weak AuthN or plain bearer tokens. It's the appropriate standard for AI systems handling financial data, health records, or regulated PII. The trade-off is implementation complexity — most vendors need a gateway in front to enforce it.</p>
+        <p>FAPI 2.0 is a strong option when an ecosystem needs its defined high-security OAuth attacker model and interoperability profile. It is not automatically required by a data classification. Adoption requires compatible authorization servers, clients, resource servers, and operational key management.</p>
       </div>
     </div>
   </div>
 
-  <!-- Implicit Flow (Deprecated) -->
-  <div class="protocol-card deprecated-card" data-type="deprecated" onclick="toggleCard(this)">
+  <!-- MCP Authorization -->
+  <div class="protocol-card authz-card" data-type="authz" onclick="toggleCard(this, event)">
+    <div class="card-header">
+      <div class="card-header-left">
+        <div class="card-title-group">
+          <h2>MCP HTTP Authorization</h2>
+          <div class="card-subtitle">MCP 2025-11-25 · OAuth 2.1 Draft Profile · Resource-Bound Tokens</div>
+        </div>
+      </div>
+      <div class="card-header-right">
+        <span class="badge badge-authz">AuthZ</span>
+        <span class="badge badge-standard">HTTP MCP</span>
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="card-body-inner">
+        <div class="flow-panel">
+          <div class="panel-label">Discovery and Authorization Flow</div>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="step-num">01</div>
+              <div class="step-actors">
+                <span class="actor actor-client">MCP Client</span>
+                <span class="step-arrow">→</span>
+                <span class="actor actor-api">MCP Server</span>
+              </div>
+              <div class="step-action">request; receive 401 + resource metadata location</div>
+            </div>
+            <div class="flow-step">
+              <div class="step-num">02</div>
+              <div class="step-actors">
+                <span class="actor actor-client">Client</span>
+                <span class="step-arrow">→</span>
+                <span class="actor actor-server">Metadata</span>
+              </div>
+              <div class="step-action">discover authorization server (RFC 9728 / 8414 or OIDC)</div>
+            </div>
+            <div class="flow-step">
+              <div class="step-num">03</div>
+              <div class="step-actors">
+                <span class="actor actor-client">Client</span>
+                <span class="step-arrow">→</span>
+                <span class="actor actor-server">Auth Server</span>
+              </div>
+              <div class="step-action">authorization code + PKCE + resource parameter</div>
+            </div>
+            <div class="flow-step">
+              <div class="step-num">04</div>
+              <div class="step-actors">
+                <span class="actor actor-server">Auth Server</span>
+                <span class="step-arrow">→</span>
+                <span class="actor actor-client">Client</span>
+              </div>
+              <div class="step-action">access token intended for canonical MCP URI</div>
+            </div>
+            <div class="flow-step">
+              <div class="step-num">05</div>
+              <div class="step-actors">
+                <span class="actor actor-client">Client</span>
+                <span class="step-arrow">→</span>
+                <span class="actor actor-api">MCP Server</span>
+              </div>
+              <div class="step-action">Bearer token; server validates token + audience</div>
+            </div>
+          </div>
+        </div>
+        <div class="facts-panel">
+          <div class="panel-label">Key Requirements and Scope</div>
+          <div class="fact-group">
+            <h4>Applicability</h4>
+            <div class="fact-items">
+              <div class="fact-item info"><span class="fact-icon">→</span><span>Authorization is optional for MCP implementations. When authorization is supported over an HTTP transport, implementations should conform to the MCP authorization specification. STDIO uses its host environment instead of this HTTP flow.</span></div>
+            </div>
+          </div>
+          <div class="fact-group">
+            <h4>Discovery and Client Registration</h4>
+            <div class="fact-items">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>MCP servers must publish Protected Resource Metadata (RFC 9728). Clients must use it and support authorization-server discovery through RFC 8414 and OpenID Connect Discovery.</span></div>
+              <div class="fact-item info"><span class="fact-icon">→</span><span>The 2025-11-25 revision says clients and authorization servers should support OAuth Client ID Metadata Documents and may support Dynamic Client Registration. These are not interchangeable requirement levels.</span></div>
+            </div>
+          </div>
+          <div class="fact-group">
+            <h4>Token Boundary</h4>
+            <div class="fact-items">
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>Clients must use PKCE and the RFC 8707 <code>resource</code> parameter. Servers must accept only tokens intended for their canonical resource URI.</span></div>
+              <div class="fact-item bad"><span class="fact-icon">✗</span><span>An MCP server must not pass the token it received from an MCP client to an upstream API. It acts as a separate OAuth client and obtains a separate upstream token.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>mTLS may strengthen workload identity or sender constraint, but it does not replace MCP discovery, audience validation, scopes, or the prohibition on token passthrough.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="distinction-box authz">
+        <div class="db-label">MCP Authorization Verdict</div>
+        <p>The MCP HTTP profile is an OAuth resource-server boundary, not merely transport authentication. Pin the specification revision, validate the canonical resource audience, minimize scopes, and exchange rather than forward tokens. Source: <a href="https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization">MCP Authorization 2025-11-25</a>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Implicit Flow (Not Recommended) -->
+  <div class="protocol-card deprecated-card" data-type="deprecated" onclick="toggleCard(this, event)">
     <div class="card-header">
       <div class="card-header-left">
         <div class="card-title-group">
           <h2>OAuth 2.0 Implicit Flow</h2>
-          <div class="card-subtitle">RFC 6749 §4.2 · DEPRECATED — Do Not Use</div>
+          <div class="card-subtitle">RFC 6749 §4.2 · Not Recommended by RFC 9700</div>
         </div>
       </div>
       <div class="card-header-right">
-        <span class="badge badge-deprecated">Deprecated</span>
+        <span class="badge badge-deprecated">Not Recommended</span>
         <span class="badge badge-standard">Legacy Only</span>
         <span class="chevron">▼</span>
       </div>
@@ -1318,7 +1454,7 @@
               <div class="step-actors">
                 <span class="actor actor-neutral">Token exposed in:</span>
               </div>
-              <div class="step-action">browser history, server logs, referrer headers</div>
+              <div class="step-action">browser history, scripts, and fragment-processing code</div>
             </div>
           </div>
           <div style="margin-top:20px; padding: 14px; background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); border-radius:5px;">
@@ -1331,22 +1467,22 @@
           <div class="fact-group">
             <h4>Core Failures</h4>
             <div class="fact-items">
-              <div class="fact-item bad"><span class="fact-icon">✗</span><span>Access token returned in the URL fragment. Leaks via browser history, referrer headers, and proxy logs.</span></div>
-              <div class="fact-item bad"><span class="fact-icon">✗</span><span>No PKCE equivalent. No way to verify the recipient is the intended client. Auth code + PKCE solves this.</span></div>
-              <div class="fact-item bad"><span class="fact-icon">✗</span><span>Still in the wild. Older AI SaaS integrations still use it. If you see response_type=token, flag it.</span></div>
+              <div class="fact-item bad"><span class="fact-icon">✗</span><span>The access token is returned through the browser front channel, increasing exposure to browser history, malicious scripts, redirects, and other front-channel leakage paths.</span></div>
+              <div class="fact-item bad"><span class="fact-icon">✗</span><span>The flow lacks the authorization-code redemption step protected by PKCE. RFC 9700 recommends authorization code with PKCE instead.</span></div>
+              <div class="fact-item warn"><span class="fact-icon">!</span><span>If an existing integration uses <code>response_type=token</code>, treat it as migration work and replace it with authorization code plus PKCE.</span></div>
             </div>
           </div>
           <div class="fact-group">
             <h4>Replace With</h4>
             <div class="fact-items">
-              <div class="fact-item good"><span class="fact-icon">✓</span><span>OAuth 2.0 Authorization Code + PKCE. Drop-in replacement for SPAs and mobile apps. No server-side component required.</span></div>
+              <div class="fact-item good"><span class="fact-icon">✓</span><span>OAuth 2.0 Authorization Code with PKCE. The client architecture still determines whether tokens are handled in the browser, a native app, or a backend-for-frontend.</span></div>
             </div>
           </div>
         </div>
       </div>
       <div class="distinction-box deprecated">
-        <div class="db-label">Deprecated Verdict</div>
-        <p>There is no valid reason to use the implicit flow in a new integration. It was deprecated because it cannot be made secure. If a vendor's documentation still shows response_type=token, their auth implementation is outdated. Require them to support authorization code + PKCE.</p>
+        <div class="db-label">Not-Recommended Verdict</div>
+        <p>Do not select the implicit grant for a new integration. RFC 9700 says clients should not use it because access tokens in authorization responses are vulnerable to leakage and replay. Use authorization code with PKCE unless a current, reviewed specification defines another flow.</p>
       </div>
     </div>
   </div>
@@ -1363,7 +1499,7 @@
         <th>AuthN</th>
         <th>AuthZ</th>
         <th>User Present</th>
-        <th>M2M / Agent</th>
+        <th>Non-user M2M</th>
         <th>Token Binding</th>
         <th>Browser Required</th>
         <th>Use In AI Systems</th>
@@ -1376,54 +1512,54 @@
         <td><span class="dot-authz">✓</span></td>
         <td><span class="dot-authz">✓</span></td>
         <td><span class="dot-no">✗</span></td>
-        <td>None (bearer)</td>
+        <td>Optional mTLS / DPoP</td>
         <td><span class="dot-authz">✓</span></td>
         <td>User-facing AI apps</td>
       </tr>
       <tr>
         <td>OpenID Connect 1.0</td>
         <td><span class="dot-authn">✓</span></td>
-        <td><span class="dot-authz">✓</span></td>
+        <td>Via OAuth access token</td>
         <td><span class="dot-authz">✓</span></td>
         <td><span class="dot-no">✗</span></td>
-        <td>None (bearer)</td>
+        <td>Access-token dependent</td>
         <td><span class="dot-authz">✓</span></td>
         <td>Identity-aware AI, audit, RBAC</td>
       </tr>
       <tr>
         <td>SAML 2.0</td>
         <td><span class="dot-authn">✓</span></td>
-        <td><span class="dot-authz">✓ (attrs)</span></td>
+        <td>Attribute input only</td>
         <td><span class="dot-authz">✓</span></td>
         <td><span class="dot-no">✗</span></td>
         <td>None</td>
         <td><span class="dot-authz">✓ Required</span></td>
-        <td>Enterprise SSO login only</td>
+        <td>Enterprise browser SSO focus</td>
       </tr>
       <tr>
         <td>OAuth 2.0 Client Creds</td>
-        <td><span class="dot-no">Partial</span></td>
+        <td>Client authentication</td>
         <td><span class="dot-authz">✓</span></td>
         <td><span class="dot-no">✗</span></td>
         <td><span class="dot-authn">✓</span></td>
-        <td>None (bearer)</td>
+        <td>Optional mTLS / DPoP</td>
         <td><span class="dot-no">✗</span></td>
         <td>Agent-to-service, pipelines</td>
       </tr>
       <tr>
         <td>mTLS</td>
         <td><span class="dot-authn">✓ Strong</span></td>
-        <td><span class="dot-authz">✓ (bound)</span></td>
+        <td>Policy-dependent</td>
         <td>Optional</td>
         <td><span class="dot-authn">✓</span></td>
-        <td><span class="dot-authn">Cert-bound</span></td>
+        <td>With RFC 8705</td>
         <td><span class="dot-no">✗</span></td>
-        <td>MCP, LLM orchestration, high-sec M2M</td>
+        <td>Workload identity, high-security M2M</td>
       </tr>
       <tr>
         <td>DPoP</td>
         <td><span class="dot-no">✗</span></td>
-        <td><span class="dot-authz">✓</span></td>
+        <td>Token-dependent</td>
         <td>Optional</td>
         <td><span class="dot-authn">✓</span></td>
         <td><span class="dot-authz">Key-bound</span></td>
@@ -1438,12 +1574,22 @@
         <td><span class="dot-authn">✓</span></td>
         <td><span class="dot-authn">mTLS or DPoP</span></td>
         <td>Optional</td>
-        <td>PHI, financial data, regulated PII in AI</td>
+        <td>High-value APIs matching the FAPI attacker model</td>
+      </tr>
+      <tr>
+        <td>MCP HTTP Authorization</td>
+        <td>Authorization-server dependent</td>
+        <td><span class="dot-authz">✓</span></td>
+        <td>Depends on grant</td>
+        <td>Extension-dependent</td>
+        <td>Optional extension</td>
+        <td>For user authorization flow</td>
+        <td>Remote MCP servers and agent tools</td>
       </tr>
       <tr>
         <td>OAuth 2.0 Implicit</td>
         <td><span class="dot-no">✗</span></td>
-        <td><span class="dot-no">✗ Broken</span></td>
+        <td>Legacy grant</td>
         <td><span class="dot-authz">✓</span></td>
         <td><span class="dot-no">✗</span></td>
         <td>None</td>
@@ -1454,19 +1600,27 @@
   </table>
 </div>
 
+<footer class="reference-footer">
+  <strong>Standards status:</strong> OAuth 2.1 is an active Internet-Draft. FAPI 2.0 is final. MCP requirements are pinned to the 2025-11-25 specification.<br>
+  <strong>Primary-source register:</strong> <a href="standards-and-sources.md">standards-and-sources.md</a> · Last reviewed 2026-08-16.
+</footer>
+
 <script>
-  function toggleCard(card) {
+  function toggleCard(card, clickEvent) {
     // Don't collapse if clicking inside the body
-    if (event.target.closest('.card-body')) return;
+    if (clickEvent && clickEvent.target.closest('.card-body')) return;
     card.classList.toggle('open');
+    card.querySelector('.card-header').setAttribute('aria-expanded', card.classList.contains('open') ? 'true' : 'false');
   }
 
   function filterCards(type, btn) {
     // Update button states
     document.querySelectorAll('.filter-btn').forEach(b => {
       b.className = 'filter-btn';
+      b.setAttribute('aria-pressed', 'false');
     });
     btn.classList.add('active-' + type);
+    btn.setAttribute('aria-pressed', 'true');
 
     // Filter cards
     document.querySelectorAll('.protocol-card').forEach(card => {
@@ -1479,10 +1633,25 @@
         } else {
           card.classList.add('hidden');
           card.classList.remove('open');
+          card.querySelector('.card-header').setAttribute('aria-expanded', 'false');
         }
       }
     });
   }
+
+  document.querySelectorAll('.protocol-card').forEach(card => {
+    const header = card.querySelector('.card-header');
+    header.setAttribute('role', 'button');
+    header.setAttribute('tabindex', '0');
+    header.setAttribute('aria-expanded', 'false');
+    header.addEventListener('keydown', keyboardEvent => {
+      if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+        keyboardEvent.preventDefault();
+        keyboardEvent.stopPropagation();
+        toggleCard(card, keyboardEvent);
+      }
+    });
+  });
 </script>
 </body>
 </html>
